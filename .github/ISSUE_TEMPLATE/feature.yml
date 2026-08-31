@@ -1,0 +1,29 @@
+name: Product improvement
+description: Propose an outcome-focused improvement to ASTERA.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Operational problem
+      description: Who experiences the problem, when, and what is the current consequence?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable success without prescribing unnecessary implementation detail.
+    validations:
+      required: true
+  - type: textarea
+    id: trust
+    attributes:
+      label: Trust and privacy considerations
+      description: Note affected roles, sensitive data, approvals, external actions, and audit requirements.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance signals
+      description: List the workflow and quality checks that would prove the improvement works.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import {
   BadgeCheck,
   Bell,
@@ -16,7 +17,6 @@ import {
   Clock3,
   Command,
   FileClock,
-  FileText,
   Fingerprint,
   History,
   LayoutDashboard,
@@ -79,27 +79,62 @@ function OverlayPanel({
   children: ReactNode;
   wide?: boolean;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDialogElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !panelRef.current) return;
+      const focusable = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     panelRef.current?.focus();
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocusedRef.current?.focus();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
     <div className="overlay-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div
+      <dialog
+        open
         ref={panelRef}
         className="overlay-panel"
         data-wide={wide || undefined}
-        role="dialog"
         aria-modal="true"
         aria-labelledby="overlay-title"
         aria-describedby={description ? 'overlay-description' : undefined}
@@ -114,7 +149,7 @@ function OverlayPanel({
           <button className="overlay-close" onClick={onClose} aria-label="Close dialog"><X /></button>
         </div>
         {children}
-      </div>
+      </dialog>
     </div>
   );
 }
@@ -124,6 +159,7 @@ export default function Home() {
   const [estateMenuOpen, setEstateMenuOpen] = useState(false);
   const [selectedEstate, setSelectedEstate] = useState<Estate>('All estates');
   const [approved, setApproved] = useState(false);
+  const [approvalAcknowledged, setApprovalAcknowledged] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<'Bali Climate Works' | 'Island Estate Engineering'>('Bali Climate Works');
   const [quoteStep, setQuoteStep] = useState<'compare' | 'confirm'>('compare');
   const [showReason, setShowReason] = useState(false);
@@ -148,13 +184,21 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
+  useEffect(() => {
+    if (analysisState !== 'loading') return;
+    const timer = window.setTimeout(() => setAnalysisState('complete'), 900);
+    return () => window.clearTimeout(timer);
+  }, [analysisState]);
+
   const openQuotes = () => {
     setQuoteStep('compare');
     setOverlay('quotes');
   };
 
   const approveQuote = () => {
+    if (!approvalAcknowledged) return;
     setApproved(true);
+    setApprovalAcknowledged(false);
     setOverlay(null);
     setToastMessage('Approval recorded. Bali Climate Works has been dispatched.');
   };
@@ -165,6 +209,7 @@ export default function Home() {
     setSelectedEstate('All estates');
     setSelectedVendor('Bali Climate Works');
     setQuoteStep('compare');
+    setApprovalAcknowledged(false);
     setAnalysisState('idle');
     setShowReason(false);
     setToastMessage('Demo restored to the initial incident state.');
@@ -172,7 +217,6 @@ export default function Home() {
 
   const analyzeReport = () => {
     setAnalysisState('loading');
-    window.setTimeout(() => setAnalysisState('complete'), 900);
   };
 
   const createIncident = () => {
@@ -287,7 +331,7 @@ export default function Home() {
                 <span className="healthy-badge"><span className="size-1.5 rounded-full bg-emerald-400" />{approved ? '96% stable' : '92% stable'}</span>
               </div>
 
-              <div className="constellation" role="img" aria-label="Portfolio map showing Jakarta Residence stable and Bali Villa requiring attention">
+              <figure className="constellation" aria-label="Portfolio map showing Jakarta Residence stable and Bali Villa requiring attention">
                 <div className="constellation-orbit orbit-one" />
                 <div className="constellation-orbit orbit-two" />
                 <div className="constellation-line line-one" />
@@ -316,7 +360,7 @@ export default function Home() {
                 </button>
 
                 <div className="concierge-orb" aria-label="Astera concierge is monitoring two estates">
-                  <img src="/og.png" alt="Original ASTERA concierge character" />
+                  <Image src="/og.png" alt="Original ASTERA concierge character" width={1600} height={900} priority sizes="96px" />
                   <span className="concierge-spark"><Sparkles /></span>
                   <span className="concierge-ring" />
                   <div className="concierge-copy"><strong>ASTERA Concierge</strong><small>Monitoring 8 critical assets</small></div>
@@ -327,7 +371,7 @@ export default function Home() {
                   <span><span className="legend-dot bg-amber-300" />Attention</span>
                   <span className="ml-auto text-muted-foreground">Updated just now</span>
                 </div>
-              </div>
+              </figure>
             </section>
 
             <section className="incident-card" id="incidents" aria-labelledby="incident-title">
@@ -403,16 +447,16 @@ export default function Home() {
               </div>
               <span className="data-stamp"><LockKeyhole /> Role-based view · synthetic data</span>
             </div>
-            <div className="asset-table" role="table" aria-label="Critical estate assets">
-              <div className="asset-row asset-header" role="row">
-                <span role="columnheader">Asset</span><span role="columnheader">Estate</span><span role="columnheader">Condition</span><span role="columnheader">Next action</span>
+            <div className="asset-table" aria-label="Critical estate assets">
+              <div className="asset-row asset-header" aria-hidden="true">
+                <span>Asset</span><span>Estate</span><span>Condition</span><span>Next action</span>
               </div>
               {assetRows.map((asset) => (
-                <button key={asset.id} className="asset-row" role="row" onClick={() => setToastMessage(`${asset.id} opened in the asset workspace.`)}>
-                  <span role="cell"><strong>{asset.name}</strong><small>{asset.id}</small></span>
-                  <span role="cell">{asset.estate}</span>
-                  <span role="cell"><i data-state={asset.state.toLowerCase()} />{approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}</span>
-                  <span role="cell">{asset.next}<ChevronRight /></span>
+                <button key={asset.id} className="asset-row" aria-label={`${asset.name}, ${asset.estate}, ${approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}, ${asset.next}`} onClick={() => setToastMessage(`${asset.id} opened in the asset workspace.`)}>
+                  <span><strong>{asset.name}</strong><small>{asset.id}</small></span>
+                  <span>{asset.estate}</span>
+                  <span><i data-state={asset.state.toLowerCase()} />{approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}</span>
+                  <span>{asset.next}<ChevronRight /></span>
                 </button>
               ))}
             </div>
@@ -468,9 +512,9 @@ export default function Home() {
         </section>
 
         {toastMessage && (
-          <div className="app-toast" role="status" aria-live="polite">
+          <output className="app-toast" aria-live="polite">
             <CheckCircle2 /><span>{toastMessage}</span><button onClick={() => setToastMessage(null)} aria-label="Dismiss notification"><X /></button>
-          </div>
+          </output>
         )}
 
         <OverlayPanel
@@ -501,14 +545,15 @@ export default function Home() {
                 <div><span>Required response</span><strong>Within 4 hours</strong></div>
                 <div><span>Warranty</span><strong>Parts covered</strong></div>
               </div>
-              <div className="quote-options" role="radiogroup" aria-label="Vendor quotations">
-                <button className="quote-option" data-selected={selectedVendor === 'Bali Climate Works' || undefined} role="radio" aria-checked={selectedVendor === 'Bali Climate Works'} onClick={() => setSelectedVendor('Bali Climate Works')}>
+              <fieldset className="quote-options">
+                <legend className="sr-only">Vendor quotations</legend>
+                <button className="quote-option" data-selected={selectedVendor === 'Bali Climate Works' || undefined} aria-pressed={selectedVendor === 'Bali Climate Works'} onClick={() => setSelectedVendor('Bali Climate Works')}>
                   <div className="quote-option-head"><span><strong>Bali Climate Works</strong><small><BadgeCheck /> Verified · 4.9 · 38 jobs</small></span><span className="recommended-label"><Sparkles /> Recommended</span></div>
                   <strong className="quote-price">Rp 8,300,000</strong>
                   <div className="quote-grid"><span><small>Arrival</small><strong>10:35–10:50</strong></span><span><small>Warranty</small><strong>90 days</strong></span><span><small>Coverage</small><strong>Moisture control</strong></span></div>
                   <p>Fastest containment and includes overnight dehumidifier.</p>
                 </button>
-                <button className="quote-option" data-selected={selectedVendor === 'Island Estate Engineering' || undefined} role="radio" aria-checked={selectedVendor === 'Island Estate Engineering'} onClick={() => setSelectedVendor('Island Estate Engineering')}>
+                <button className="quote-option" data-selected={selectedVendor === 'Island Estate Engineering' || undefined} aria-pressed={selectedVendor === 'Island Estate Engineering'} onClick={() => setSelectedVendor('Island Estate Engineering')}>
                   <div className="quote-option-head"><span><strong>Island Estate Engineering</strong><small><BadgeCheck /> Verified · 4.7 · 24 jobs</small></span><span className="lowest-label">Lowest cost</span></div>
                   <strong className="quote-price">Rp 6,850,000</strong>
                   <div className="quote-grid"><span><small>Arrival</small><strong>14:00–15:00</strong></span><span><small>Warranty</small><strong>60 days</strong></span><span><small>Coverage</small><strong>Basic cleanup</strong></span></div>
@@ -516,9 +561,9 @@ export default function Home() {
                 </button>
                 <div className="quote-actions">
                   <button className="secondary-action" onClick={() => { setOverlay(null); setToastMessage('Revision requested from both verified vendors.'); }}>Request revision</button>
-                  <button className="primary-action" onClick={() => setQuoteStep('confirm')}>Approve {selectedPrice}<ChevronRight /></button>
+                  <button className="primary-action" onClick={() => { setApprovalAcknowledged(false); setQuoteStep('confirm'); }}>Approve {selectedPrice}<ChevronRight /></button>
                 </div>
-              </div>
+              </fieldset>
             </div>
           ) : (
             <div className="confirm-approval">
@@ -530,10 +575,10 @@ export default function Home() {
                 <div><dt>Work order</dt><dd>WO-BLI-0829-027</dd></div>
                 <div><dt>Accountable role</dt><dd>Principal</dd></div>
               </dl>
-              <label className="approval-check"><input type="checkbox" defaultChecked /> I reviewed the quote, scope, arrival time, and warranty.</label>
+              <label className="approval-check"><input type="checkbox" checked={approvalAcknowledged} onChange={(event) => setApprovalAcknowledged(event.target.checked)} /> I reviewed the quote, scope, arrival time, and warranty.</label>
               <div className="quote-actions">
                 <button className="secondary-action" onClick={() => setQuoteStep('compare')}>Back to comparison</button>
-                <button className="primary-action" onClick={approveQuote}><Check /> Confirm approval</button>
+                <button className="primary-action" onClick={approveQuote} disabled={!approvalAcknowledged} aria-disabled={!approvalAcknowledged}><Check /> Confirm approval</button>
               </div>
             </div>
           )}
@@ -554,7 +599,7 @@ export default function Home() {
         </OverlayPanel>
 
         <OverlayPanel open={overlay === 'search'} onClose={() => setOverlay(null)} title="Search the private workspace" description="Find an estate, asset, vendor, or recorded decision.">
-          <div className="command-search"><Search /><input autoFocus placeholder="Try BLI-HVAC-04 or Bali Climate Works" /></div>
+          <div className="command-search"><Search /><input aria-label="Search private workspace" placeholder="Try BLI-HVAC-04 or Bali Climate Works" /></div>
           <div className="command-results">
             <button onClick={() => scrollTo('assets')}><Building2 /><span><strong>BLI-HVAC-04</strong><small>Master-suite HVAC · Bali Villa</small></span><Command /></button>
             <button onClick={() => scrollTo('vendors')}><UsersRound /><span><strong>Bali Climate Works</strong><small>Verified HVAC vendor</small></span><ChevronRight /></button>
