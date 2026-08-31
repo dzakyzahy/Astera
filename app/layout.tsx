@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://astera-estate-ops.onyonn.chatgpt.site'),
   title: 'ASTERA — Private Estate Operations',
   description:
     'A calm command center for private estates, trusted vendors, accountable approvals, and incident response.',
@@ -21,12 +22,26 @@ export const metadata: Metadata = {
     description:
       'A calm command center for private estates, trusted vendors, accountable approvals, and incident response.',
     type: 'website',
+    url: 'https://astera-estate-ops.onyonn.chatgpt.site',
+    siteName: 'ASTERA',
+    images: [
+      {
+        url: 'https://astera-estate-ops.onyonn.chatgpt.site/og.png',
+        width: 1600,
+        height: 900,
+        alt: 'ASTERA private estate operations command center',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'ASTERA — Private Estate Operations',
     description:
       'A calm command center for private estates, trusted vendors, accountable approvals, and incident response.',
+    images: ['https://astera-estate-ops.onyonn.chatgpt.site/og.png'],
+  },
+  alternates: {
+    canonical: 'https://astera-estate-ops.onyonn.chatgpt.site',
   },
 };
 
