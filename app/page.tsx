@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import {
+  Activity,
   BadgeCheck,
   Bell,
   Building2,
@@ -16,7 +17,9 @@ import {
   ClipboardCheck,
   Clock3,
   Command,
+  Cpu,
   FileClock,
+  FileText,
   Fingerprint,
   History,
   LayoutDashboard,
@@ -48,20 +51,215 @@ const navigation = [
   { label: 'Audit', icon: FileClock, href: '#audit' },
 ];
 
-const assetRows = [
-  { id: 'BLI-HVAC-04', name: 'Master-suite HVAC', estate: 'Bali Villa', state: 'Attention', next: 'Follow-up · 13 Sep' },
-  { id: 'JKT-PWR-02', name: '80 kVA backup generator', estate: 'Jakarta Residence', state: 'Scheduled', next: 'Fuel inspection · 3 Sep' },
-  { id: 'BLI-POOL-03', name: 'Infinity-pool circulation pump', estate: 'Bali Villa', state: 'Scheduled', next: 'Seal replacement · 2 Sep' },
-  { id: 'JKT-SEC-03', name: 'Perimeter security system', estate: 'Jakarta Residence', state: 'Healthy', next: 'Firmware review · 18 Sep' },
+type AssetData = {
+  id: string;
+  name: string;
+  estate: 'Jakarta Residence' | 'Bali Villa';
+  state: 'Attention' | 'Scheduled' | 'Healthy';
+  next: string;
+  location: string;
+  serial: string;
+  spec: string;
+  lastService: string;
+  telemetry: { label: string; value: string; status: 'good' | 'warning' | 'normal' }[];
+  logs: { date: string; summary: string; technician: string }[];
+};
+
+const assetList: AssetData[] = [
+  {
+    id: 'BLI-HVAC-04',
+    name: 'Master-suite HVAC',
+    estate: 'Bali Villa',
+    state: 'Attention',
+    next: 'Follow-up · 13 Sep',
+    location: 'North Wing · Master Pavilion',
+    serial: 'SN-VRV-9482-ID',
+    spec: 'Daikin VRV Multi-Split 14 kW · R32 Eco-refrigerant',
+    lastService: '14 Jun 2026 (Quarterly coil flush)',
+    telemetry: [
+      { label: 'Condensate Tray', value: 'High Level Alert', status: 'warning' },
+      { label: 'Compressor Temp', value: '38.4°C', status: 'good' },
+      { label: 'Air Flow Rate', value: '920 CFM', status: 'normal' },
+    ],
+    logs: [
+      { date: '29 Aug 2026', summary: 'Emergency condensate line isolation by Estate Manager', technician: 'Staff Lead' },
+      { date: '14 Jun 2026', summary: 'Routine pre-dry season chemical flush & filter change', technician: 'Bali Climate Works' },
+    ],
+  },
+  {
+    id: 'JKT-PWR-02',
+    name: '80 kVA backup generator',
+    estate: 'Jakarta Residence',
+    state: 'Scheduled',
+    next: 'Fuel inspection · 3 Sep',
+    location: 'Sub-level B1 · Utility Vault',
+    serial: 'SN-GEN-5510-JK',
+    spec: 'Perkins 1104D Turbo Diesel · Sound-attenuated enclosure',
+    lastService: '12 Aug 2026 (Monthly automated load run)',
+    telemetry: [
+      { label: 'Fuel Reservoir', value: '88% (420 L)', status: 'good' },
+      { label: 'Battery Health', value: '26.8 V (Optimal)', status: 'good' },
+      { label: 'Transfer Switch', value: 'Standby / Auto', status: 'normal' },
+    ],
+    logs: [
+      { date: '12 Aug 2026', summary: '30-minute full transfer simulation passed without voltage sag', technician: 'Capital Power Care' },
+      { date: '04 May 2026', summary: 'Engine oil filter & fuel separator replacement', technician: 'Capital Power Care' },
+    ],
+  },
+  {
+    id: 'BLI-POOL-03',
+    name: 'Infinity-pool circulation pump',
+    estate: 'Bali Villa',
+    state: 'Scheduled',
+    next: 'Seal replacement · 2 Sep',
+    location: 'Lower Cliffside Pump House',
+    serial: 'SN-PMP-2294-BL',
+    spec: 'Hayward TriStar 3.0 HP Variable Speed Pump',
+    lastService: '01 Jul 2026 (Impeller inspection)',
+    telemetry: [
+      { label: 'Flow Velocity', value: '145 GPM', status: 'normal' },
+      { label: 'Motor Vibration', value: '2.4 mm/s (Elevated)', status: 'warning' },
+      { label: 'Line Pressure', value: '18.2 PSI', status: 'good' },
+    ],
+    logs: [
+      { date: '01 Jul 2026', summary: 'Re-greased mechanical drive bearing', technician: 'Island Estate Eng.' },
+    ],
+  },
+  {
+    id: 'JKT-SEC-03',
+    name: 'Perimeter security system',
+    estate: 'Jakarta Residence',
+    state: 'Healthy',
+    next: 'Firmware review · 18 Sep',
+    location: 'Gatehouse Main & Perimeter Fence',
+    serial: 'SN-SEC-8821-JK',
+    spec: 'FLIR Thermal LiDAR + AI Perimeter Intrusion Hub',
+    lastService: '20 Aug 2026 (Optical alignment & IR calibration)',
+    telemetry: [
+      { label: 'Sensors Online', value: '24 / 24 Active', status: 'good' },
+      { label: 'Network Latency', value: '4 ms (Fiber Ring)', status: 'good' },
+      { label: 'Tamper Alarm', value: 'Armed & Normal', status: 'normal' },
+    ],
+    logs: [
+      { date: '20 Aug 2026', summary: 'IR illuminator cleaning and perimeter optical recalibration', technician: 'Internal Security Team' },
+    ],
+  },
 ];
 
-const vendorRows = [
-  { name: 'Bali Climate Works', specialty: 'HVAC & moisture control', response: '2h', score: '4.9', jobs: '38 jobs' },
-  { name: 'Island Estate Engineering', specialty: 'General maintenance', response: '4h', score: '4.7', jobs: '24 jobs' },
-  { name: 'Capital Power Care', specialty: 'Power & generators', response: '3h', score: '4.8', jobs: '31 jobs' },
+type VendorData = {
+  name: string;
+  specialty: string;
+  response: string;
+  score: string;
+  jobs: string;
+  license: string;
+  insurance: string;
+  leadTech: string;
+  contract: string;
+  capabilities: string[];
+};
+
+const vendorList: VendorData[] = [
+  {
+    name: 'Bali Climate Works',
+    specialty: 'HVAC & moisture control',
+    response: '2h',
+    score: '4.9',
+    jobs: '38 jobs',
+    license: 'Badan Usaha Jasa Konstruksi (BUJK) #882-BLI',
+    insurance: 'Verified active · Liability coverage Rp 5,000,000,000',
+    leadTech: 'I Wayan S. (Certified Master Technician)',
+    contract: 'Tier-1 Priority SLA Master Agreement (Valid 2027)',
+    capabilities: ['VRV multi-split systems', 'High-humidity remediation', 'Air filtration & sterilization', 'Overnight dehumidification units'],
+  },
+  {
+    name: 'Island Estate Engineering',
+    specialty: 'General maintenance',
+    response: '4h',
+    score: '4.7',
+    jobs: '24 jobs',
+    license: 'Surat Izin Usaha Perdagangan (SIUP) #419-DEN',
+    insurance: 'Verified active · Liability coverage Rp 2,500,000,000',
+    leadTech: 'Ketut A. (Senior MEP Engineer)',
+    contract: 'Preferred Vendor Agreement (Valid 2027)',
+    capabilities: ['Mechanical plumbing', 'Pool pumps & hydraulics', 'Electrical sub-panels', 'Architectural carpentry'],
+  },
+  {
+    name: 'Capital Power Care',
+    specialty: 'Power & generators',
+    response: '3h',
+    score: '4.8',
+    jobs: '31 jobs',
+    license: 'Kementerian ESDM Electrical Contractor #102-JKT',
+    insurance: 'Verified active · Comprehensive Industrial Cover',
+    leadTech: 'Bambang R. (High-Voltage Certified Specialist)',
+    contract: 'Annual Emergency Standby Contract (Valid 2026)',
+    capabilities: ['High-kVA diesel generators', 'Automatic transfer switches (ATS)', 'Solar inverter backup arrays', 'UPS power conditioning'],
+  },
 ];
 
-type Overlay = 'quotes' | 'report' | 'search' | 'notifications' | 'role' | 'privacy' | 'menu' | null;
+type AuditRecord = {
+  id: string;
+  title: string;
+  actor: string;
+  time: string;
+  estate: 'Jakarta Residence' | 'Bali Villa';
+  hash: string;
+  summary: string;
+};
+
+const auditRecords: AuditRecord[] = [
+  {
+    id: 'EVT-0829-994',
+    title: 'Vendor comparison prepared',
+    actor: 'ASTERA Concierge',
+    time: '09:48 WITA · 29 Aug 2026',
+    estate: 'Bali Villa',
+    hash: '0x8f2a99e74cb10e42d76a',
+    summary: 'Compared Bali Climate Works and Island Estate Engineering on SLA, warranty, and guest arrival lead times.',
+  },
+  {
+    id: 'EVT-0829-982',
+    title: 'Immediate risk contained',
+    actor: 'Estate Manager',
+    time: '09:18 WITA · 29 Aug 2026',
+    estate: 'Bali Villa',
+    hash: '0x3c71be9004fa92b3810c',
+    summary: 'Master-suite HVAC power isolated. Valuables relocated away from condensate drainage zone.',
+  },
+  {
+    id: 'EVT-0829-976',
+    title: 'Incident evidence received',
+    actor: 'Staff Lead',
+    time: '09:14 WITA · 29 Aug 2026',
+    estate: 'Bali Villa',
+    hash: '0x18e9bc74332900fa1127',
+    summary: 'Photo evidence and acoustic voice note captured via staff mobile intake.',
+  },
+  {
+    id: 'EVT-0820-910',
+    title: 'Perimeter thermal calibration logged',
+    actor: 'Security Supervisor',
+    time: '16:30 WIB · 20 Aug 2026',
+    estate: 'Jakarta Residence',
+    hash: '0x9924ba77ef0128cb5541',
+    summary: 'Quarterly sensor alignment completed with 0 dead-zone anomalies recorded.',
+  },
+];
+
+type Overlay =
+  | 'quotes'
+  | 'report'
+  | 'search'
+  | 'notifications'
+  | 'role'
+  | 'privacy'
+  | 'menu'
+  | 'asset-detail'
+  | 'vendor-detail'
+  | 'audit-detail'
+  | null;
+
 type Estate = 'All estates' | 'Jakarta Residence' | 'Bali Villa';
 
 function OverlayPanel({
@@ -168,15 +366,58 @@ export default function Home() {
   const [extraIncident, setExtraIncident] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Deep detail views
+  const [selectedAsset, setSelectedAsset] = useState<AssetData | null>(null);
+  const [selectedVendorDetail, setSelectedVendorDetail] = useState<VendorData | null>(null);
+  const [selectedAuditRecord, setSelectedAuditRecord] = useState<AuditRecord | null>(null);
+
+  // Search query
+  const [searchQuery, setSearchQuery] = useState('');
+
   const selectedPrice = selectedVendor === 'Bali Climate Works' ? 'Rp 8,300,000' : 'Rp 6,850,000';
   const jakartaOnly = selectedEstate === 'Jakarta Residence';
+  const baliOnly = selectedEstate === 'Bali Villa';
   const issueVisible = !jakartaOnly;
+
+  const filteredAssets = assetList.filter((a) => {
+    if (selectedEstate === 'Jakarta Residence') return a.estate === 'Jakarta Residence';
+    if (selectedEstate === 'Bali Villa') return a.estate === 'Bali Villa';
+    return true;
+  });
+
   const dashboardMetrics = [
-    { label: 'Open incidents', value: jakartaOnly ? '00' : extraIncident ? '02' : '01', detail: jakartaOnly ? 'No active issues' : approved ? '1 vendor assigned' : '1 high priority', tone: jakartaOnly ? 'emerald' : 'amber' },
+    {
+      label: 'Open incidents',
+      value: jakartaOnly ? '00' : extraIncident ? '02' : '01',
+      detail: jakartaOnly ? 'No active issues' : approved ? '1 vendor assigned' : '1 high priority',
+      tone: jakartaOnly ? 'emerald' : 'amber',
+    },
     { label: 'SLA at risk', value: '00', detail: 'All within target', tone: 'emerald' },
-    { label: 'Pending approvals', value: jakartaOnly || approved ? '00' : '01', detail: jakartaOnly || approved ? 'Nothing waiting' : 'Rp 8.3m awaiting', tone: 'violet' },
-    { label: approved ? 'Value protected' : 'Cost avoidance', value: jakartaOnly ? 'Rp 0' : 'Rp 18.5m', detail: approved ? 'Simulated estimate' : 'Potential · demo estimate', tone: 'gold' },
+    {
+      label: 'Pending approvals',
+      value: jakartaOnly || approved ? '00' : '01',
+      detail: jakartaOnly || approved ? 'Nothing waiting' : 'Rp 8.3m awaiting',
+      tone: 'violet',
+    },
+    {
+      label: approved ? 'Value protected' : 'Cost avoidance',
+      value: jakartaOnly ? 'Rp 0' : 'Rp 18.5m',
+      detail: approved ? 'Simulated estimate' : 'Potential · demo estimate',
+      tone: 'gold',
+    },
   ];
+
+  // Global keyboard shortcut: Cmd+K / Ctrl+K for search command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setOverlay((curr) => (curr === 'search' ? null : 'search'));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -212,6 +453,10 @@ export default function Home() {
     setApprovalAcknowledged(false);
     setAnalysisState('idle');
     setShowReason(false);
+    setSelectedAsset(null);
+    setSelectedVendorDetail(null);
+    setSelectedAuditRecord(null);
+    setSearchQuery('');
     setToastMessage('Demo restored to the initial incident state.');
   };
 
@@ -229,6 +474,47 @@ export default function Home() {
   const scrollTo = (id: string) => {
     setOverlay(null);
     window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
+  };
+
+  const openAssetModal = (asset: AssetData) => {
+    setSelectedAsset(asset);
+    setOverlay('asset-detail');
+  };
+
+  const openVendorModal = (vendor: VendorData) => {
+    setSelectedVendorDetail(vendor);
+    setOverlay('vendor-detail');
+  };
+
+  const openAuditModal = (audit: AuditRecord) => {
+    setSelectedAuditRecord(audit);
+    setOverlay('audit-detail');
+  };
+
+  // Search filter logic
+  const cleanQuery = searchQuery.trim().toLowerCase();
+  const searchResults = {
+    assets: assetList.filter(
+      (a) =>
+        !cleanQuery ||
+        a.id.toLowerCase().includes(cleanQuery) ||
+        a.name.toLowerCase().includes(cleanQuery) ||
+        a.location.toLowerCase().includes(cleanQuery) ||
+        a.estate.toLowerCase().includes(cleanQuery),
+    ),
+    vendors: vendorList.filter(
+      (v) =>
+        !cleanQuery ||
+        v.name.toLowerCase().includes(cleanQuery) ||
+        v.specialty.toLowerCase().includes(cleanQuery),
+    ),
+    audits: auditRecords.filter(
+      (au) =>
+        !cleanQuery ||
+        au.id.toLowerCase().includes(cleanQuery) ||
+        au.title.toLowerCase().includes(cleanQuery) ||
+        au.actor.toLowerCase().includes(cleanQuery),
+    ),
   };
 
   return (
@@ -278,7 +564,9 @@ export default function Home() {
 
           <div className="flex items-center justify-end gap-2">
             <div className="private-status hidden lg:flex"><ShieldCheck className="size-3.5" />Private workspace</div>
-            <button className="topbar-icon icon-action" aria-label="Search" onClick={() => setOverlay('search')}><Search /></button>
+            <button className="topbar-icon icon-action" aria-label="Search (Ctrl+K)" title="Quick Search (Ctrl+K)" onClick={() => setOverlay('search')}>
+              <Search />
+            </button>
             <button className="topbar-icon icon-action relative" aria-label="Notifications" onClick={() => setOverlay('notifications')}>
               <Bell /><span className="notification-dot" />
             </button>
@@ -312,7 +600,13 @@ export default function Home() {
               </div>
               <h1>Good afternoon, Principal.</h1>
               <p>
-                {jakartaOnly ? <><span className="text-emerald-300">All clear.</span> Jakarta Residence is operating normally.</> : <><span className="text-amber-300">{extraIncident ? 'Two issues' : 'One issue'}</span> need{extraIncident ? '' : 's'} your attention across two estates.</>}
+                {jakartaOnly ? (
+                  <><span className="text-emerald-300">All clear.</span> Jakarta Residence is operating normally.</>
+                ) : baliOnly ? (
+                  <><span className="text-amber-300">{extraIncident ? 'Two active issues' : 'One active issue'}</span> in Bali Villa requires your decision.</>
+                ) : (
+                  <><span className="text-amber-300">{extraIncident ? 'Two issues' : 'One issue'}</span> need{extraIncident ? '' : 's'} your attention across two estates.</>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -328,7 +622,10 @@ export default function Home() {
                   <div className="eyebrow"><MapPin className="size-3.5" />Live estate pulse</div>
                   <h2 id="estate-pulse-title">Your private world, clearly organized.</h2>
                 </div>
-                <span className="healthy-badge"><span className="size-1.5 rounded-full bg-emerald-400" />{approved ? '96% stable' : '92% stable'}</span>
+                <span className="healthy-badge">
+                  <span className="size-1.5 rounded-full bg-emerald-400" />
+                  {approved ? '96% stable' : jakartaOnly ? '98% stable' : '92% stable'}
+                </span>
               </div>
 
               <figure className="constellation" aria-label="Portfolio map showing Jakarta Residence stable and Bali Villa requiring attention">
@@ -341,7 +638,7 @@ export default function Home() {
                   className="estate-node jakarta-node"
                   data-selected={selectedEstate === 'Jakarta Residence' || undefined}
                   aria-label="Jakarta Residence, 96 percent healthy"
-                  onClick={() => setSelectedEstate('Jakarta Residence')}
+                  onClick={() => setSelectedEstate(selectedEstate === 'Jakarta Residence' ? 'All estates' : 'Jakarta Residence')}
                 >
                   <span className="node-pulse node-pulse-safe" />
                   <span className="node-core"><Building2 /></span>
@@ -352,7 +649,7 @@ export default function Home() {
                   className="estate-node bali-node"
                   data-selected={selectedEstate === 'Bali Villa' || undefined}
                   aria-label={`Bali Villa, ${approved ? 'vendor dispatched' : 'high priority water leak'}`}
-                  onClick={() => setSelectedEstate('Bali Villa')}
+                  onClick={() => setSelectedEstate(selectedEstate === 'Bali Villa' ? 'All estates' : 'Bali Villa')}
                 >
                   {!approved && <span className="node-pulse node-pulse-alert" />}
                   <span className={`node-core ${approved ? 'node-core-assigned' : 'node-core-alert'}`}>{approved ? <Wrench /> : <TriangleAlert />}</span>
@@ -445,15 +742,23 @@ export default function Home() {
                 <p className="eyebrow"><Building2 /> Asset registry</p>
                 <h2 id="assets-title">Critical assets and upcoming care</h2>
               </div>
-              <span className="data-stamp"><LockKeyhole /> Role-based view · synthetic data</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground hidden md:inline">Showing: <strong className="text-foreground">{selectedEstate}</strong> ({filteredAssets.length})</span>
+                <span className="data-stamp"><LockKeyhole /> Role-based view · synthetic data</span>
+              </div>
             </div>
             <div className="asset-table" aria-label="Critical estate assets">
               <div className="asset-row asset-header" aria-hidden="true">
                 <span>Asset</span><span>Estate</span><span>Condition</span><span>Next action</span>
               </div>
-              {assetRows.map((asset) => (
-                <button key={asset.id} className="asset-row" aria-label={`${asset.name}, ${asset.estate}, ${approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}, ${asset.next}`} onClick={() => setToastMessage(`${asset.id} opened in the asset workspace.`)}>
-                  <span><strong>{asset.name}</strong><small>{asset.id}</small></span>
+              {filteredAssets.map((asset) => (
+                <button
+                  key={asset.id}
+                  className="asset-row"
+                  aria-label={`${asset.name}, ${asset.estate}, ${approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}, ${asset.next}`}
+                  onClick={() => openAssetModal(asset)}
+                >
+                  <span><strong>{asset.name}</strong><small>{asset.id} · {asset.location}</small></span>
                   <span>{asset.estate}</span>
                   <span><i data-state={asset.state.toLowerCase()} />{approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}</span>
                   <span>{asset.next}<ChevronRight /></span>
@@ -472,8 +777,8 @@ export default function Home() {
                 <button className="text-action" onClick={openQuotes}>Compare quotes <ChevronRight /></button>
               </div>
               <div className="vendor-list">
-                {vendorRows.map((vendor, index) => (
-                  <button key={vendor.name} className="vendor-row" onClick={() => setToastMessage(`${vendor.name} profile opened.`)}>
+                {vendorList.map((vendor, index) => (
+                  <button key={vendor.name} className="vendor-row" onClick={() => openVendorModal(vendor)}>
                     <span className="vendor-monogram">{vendor.name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>
                     <span><strong>{vendor.name}</strong><small>{vendor.specialty}</small></span>
                     <span className="vendor-proof"><BadgeCheck /> Verified</span>
@@ -492,15 +797,29 @@ export default function Home() {
                   <p className="eyebrow"><History /> Accountable record</p>
                   <h2 id="audit-title">Decision trail</h2>
                 </div>
-                <span className="audit-count">{approved ? '19' : '18'} events</span>
+                <span className="audit-count">{approved ? auditRecords.length + 1 : auditRecords.length} events</span>
               </div>
               <ol className="audit-list">
                 {approved && (
-                  <li className="audit-new"><span><Check /></span><div><strong>Quote approved by Principal</strong><small>Rp 8,300,000 · 09:55 WITA · just now</small></div></li>
+                  <li className="audit-new">
+                    <span><Check /></span>
+                    <div>
+                      <strong>Quote approved by Principal</strong>
+                      <small>Rp 8,300,000 · Bali Villa · 09:55 WITA · just now</small>
+                    </div>
+                  </li>
                 )}
-                <li><span><ClipboardCheck /></span><div><strong>Vendor comparison prepared</strong><small>ASTERA Concierge · 09:48 WITA</small></div></li>
-                <li><span><ShieldCheck /></span><div><strong>Immediate risk contained</strong><small>Estate Manager · 09:18 WITA</small></div></li>
-                <li><span><Camera /></span><div><strong>Incident evidence received</strong><small>Photo + voice note · 09:14 WITA</small></div></li>
+                {auditRecords.map((record) => (
+                  <li key={record.id}>
+                    <button className="audit-row-btn" onClick={() => openAuditModal(record)} aria-label={`View audit details for ${record.title}`}>
+                      <span><ClipboardCheck /></span>
+                      <div>
+                        <strong>{record.title}</strong>
+                        <small>{record.actor} · {record.estate} · {record.time}</small>
+                      </div>
+                    </button>
+                  </li>
+                ))}
               </ol>
             </section>
           </div>
@@ -517,6 +836,7 @@ export default function Home() {
           </output>
         )}
 
+        {/* Vendor Quotes Modal */}
         <OverlayPanel
           open={overlay === 'quotes'}
           onClose={() => setOverlay(null)}
@@ -584,6 +904,7 @@ export default function Home() {
           )}
         </OverlayPanel>
 
+        {/* Report Modal */}
         <OverlayPanel open={overlay === 'report'} onClose={() => setOverlay(null)} title="Report an estate incident" description="Send a message, photo, or voice note. ASTERA prepares the incident record; a person still decides what happens next.">
           <div className="report-form">
             <label htmlFor="incident-report">What needs attention?</label>
@@ -598,12 +919,231 @@ export default function Home() {
           </div>
         </OverlayPanel>
 
-        <OverlayPanel open={overlay === 'search'} onClose={() => setOverlay(null)} title="Search the private workspace" description="Find an estate, asset, vendor, or recorded decision.">
-          <div className="command-search"><Search /><input aria-label="Search private workspace" placeholder="Try BLI-HVAC-04 or Bali Climate Works" /></div>
+        {/* Deep Asset Detail Modal */}
+        <OverlayPanel
+          open={overlay === 'asset-detail' && selectedAsset !== null}
+          onClose={() => setOverlay(null)}
+          title={selectedAsset?.name || 'Asset details'}
+          description={`${selectedAsset?.id} · ${selectedAsset?.estate} (${selectedAsset?.location})`}
+          wide
+        >
+          {selectedAsset && (
+            <div className="asset-detail-view flex flex-col gap-5 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                  <span className="text-[10px] uppercase text-muted-foreground block mb-1">Status</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                    <span className={`size-2 rounded-full ${selectedAsset.state === 'Healthy' ? 'bg-emerald-400' : selectedAsset.state === 'Scheduled' ? 'bg-indigo-400' : 'bg-amber-400'}`} />
+                    {approved && selectedAsset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : selectedAsset.state}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                  <span className="text-[10px] uppercase text-muted-foreground block mb-1">Serial number</span>
+                  <span className="font-mono text-xs text-foreground">{selectedAsset.serial}</span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                  <span className="text-[10px] uppercase text-muted-foreground block mb-1">Next milestone</span>
+                  <span className="font-medium text-foreground">{selectedAsset.next}</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-white/8 bg-white/[0.02] flex flex-col gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5"><Cpu className="size-3.5 text-primary" /> Technical Specification</span>
+                <p className="text-foreground text-xs leading-relaxed">{selectedAsset.spec}</p>
+                <span className="text-[11px] text-muted-foreground mt-1">Last serviced: {selectedAsset.lastService}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-2 flex items-center gap-1.5"><Activity className="size-3.5 text-emerald-400" /> Real-time telemetry simulation</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {selectedAsset.telemetry.map((t) => (
+                    <div key={t.label} className="p-3 rounded-lg border border-white/6 bg-white/[0.015] flex flex-col gap-1">
+                      <span className="text-[9px] text-muted-foreground">{t.label}</span>
+                      <strong className={`text-xs ${t.status === 'warning' ? 'text-amber-300' : 'text-foreground'}`}>{t.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-2 flex items-center gap-1.5"><History className="size-3.5 text-indigo-400" /> Maintenance event log</span>
+                <div className="flex flex-col gap-2">
+                  {selectedAsset.logs.map((log, idx) => (
+                    <div key={idx} className="p-3 rounded-lg border border-white/6 bg-white/[0.015] flex items-start justify-between gap-3 text-xs">
+                      <div>
+                        <p className="font-medium text-foreground text-xs">{log.summary}</p>
+                        <span className="text-[10px] text-muted-foreground">Logged by: {log.technician}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">{log.date}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/8">
+                <button className="secondary-action" onClick={() => { setOverlay(null); setToastMessage(`Service request drafted for ${selectedAsset.id}`); }}>Request routine care</button>
+                <button className="primary-action" onClick={() => { setOverlay('report'); setReportText(`Issue inquiry regarding ${selectedAsset.name} (${selectedAsset.id}): `); }}>Report issue</button>
+              </div>
+            </div>
+          )}
+        </OverlayPanel>
+
+        {/* Deep Vendor Detail Modal */}
+        <OverlayPanel
+          open={overlay === 'vendor-detail' && selectedVendorDetail !== null}
+          onClose={() => setOverlay(null)}
+          title={selectedVendorDetail?.name || 'Vendor Profile'}
+          description={`${selectedVendorDetail?.specialty} · Verified Estate Partner`}
+          wide
+        >
+          {selectedVendorDetail && (
+            <div className="vendor-detail-view flex flex-col gap-5 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                  <span className="text-[10px] uppercase text-muted-foreground block mb-1">Response SLA</span>
+                  <strong className="text-foreground text-sm font-semibold">{selectedVendorDetail.response} emergency guarantee</strong>
+                </div>
+                <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                  <span className="text-[10px] uppercase text-muted-foreground block mb-1">Quality rating</span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-amber-300">
+                    <Star className="size-3.5 fill-amber-300" /> {selectedVendorDetail.score} ({selectedVendorDetail.jobs})
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                  <span className="text-[10px] uppercase text-muted-foreground block mb-1">Account Lead</span>
+                  <span className="font-medium text-foreground text-xs">{selectedVendorDetail.leadTech}</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-white/8 bg-white/[0.02] flex flex-col gap-3">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mb-1"><BadgeCheck className="size-3.5 text-emerald-400" /> Commercial Licensing</span>
+                  <p className="text-foreground text-xs">{selectedVendorDetail.license}</p>
+                </div>
+                <div className="border-t border-white/6 pt-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mb-1"><ShieldCheck className="size-3.5 text-indigo-400" /> Liability Insurance</span>
+                  <p className="text-foreground text-xs">{selectedVendorDetail.insurance}</p>
+                </div>
+                <div className="border-t border-white/6 pt-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mb-1"><FileText className="size-3.5 text-amber-400" /> Master Agreement</span>
+                  <p className="text-foreground text-xs">{selectedVendorDetail.contract}</p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-2">Verified Estate Capabilities</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedVendorDetail.capabilities.map((cap) => (
+                    <div key={cap} className="p-2.5 rounded-lg border border-white/6 bg-white/[0.015] flex items-center gap-2 text-xs">
+                      <Check className="size-3.5 text-emerald-400" />
+                      <span>{cap}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/8">
+                <button className="secondary-action" onClick={() => { setOverlay(null); setToastMessage(`Direct dispatch channel opened for ${selectedVendorDetail.name}`); }}>Request SLA Quote</button>
+                <button className="primary-action" onClick={() => { setOverlay('quotes'); }}>View Live Quotes</button>
+              </div>
+            </div>
+          )}
+        </OverlayPanel>
+
+        {/* Deep Audit Modal */}
+        <OverlayPanel
+          open={overlay === 'audit-detail' && selectedAuditRecord !== null}
+          onClose={() => setOverlay(null)}
+          title={selectedAuditRecord?.title || 'Audit event'}
+          description={`${selectedAuditRecord?.id} · ${selectedAuditRecord?.estate}`}
+        >
+          {selectedAuditRecord && (
+            <div className="flex flex-col gap-4 text-xs">
+              <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02] flex flex-col gap-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Recorded time</span>
+                  <span className="font-mono text-foreground">{selectedAuditRecord.time}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Accountable actor</span>
+                  <span className="font-semibold text-foreground">{selectedAuditRecord.actor}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cryptographic hash</span>
+                  <span className="font-mono text-primary">{selectedAuditRecord.hash}</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
+                <span className="text-[10px] uppercase text-muted-foreground font-semibold block mb-1.5">Action summary</span>
+                <p className="text-foreground leading-relaxed">{selectedAuditRecord.summary}</p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 flex items-center gap-2 text-emerald-400 text-[11px]">
+                <ShieldCheck className="size-4 shrink-0" />
+                <span>Tamper-evident record verified against the synthetic estate ledger.</span>
+              </div>
+            </div>
+          )}
+        </OverlayPanel>
+
+        {/* Global Search / Command Palette */}
+        <OverlayPanel open={overlay === 'search'} onClose={() => { setOverlay(null); setSearchQuery(''); }} title="Search the private workspace" description="Find an estate, asset, vendor, or recorded decision.">
+          <div className="command-search">
+            <Search />
+            <input
+              aria-label="Search private workspace"
+              placeholder="Type to filter: BLI-HVAC-04, generator, Bali Climate Works..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
           <div className="command-results">
-            <button onClick={() => scrollTo('assets')}><Building2 /><span><strong>BLI-HVAC-04</strong><small>Master-suite HVAC · Bali Villa</small></span><Command /></button>
-            <button onClick={() => scrollTo('vendors')}><UsersRound /><span><strong>Bali Climate Works</strong><small>Verified HVAC vendor</small></span><ChevronRight /></button>
-            <button onClick={() => scrollTo('audit')}><History /><span><strong>INC-BLI-0829-014</strong><small>Water leak decision trail</small></span><ChevronRight /></button>
+            {searchResults.assets.length > 0 && (
+              <>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-2 pt-2">Assets ({searchResults.assets.length})</div>
+                {searchResults.assets.map((asset) => (
+                  <button key={asset.id} onClick={() => { setOverlay(null); openAssetModal(asset); }}>
+                    <Building2 />
+                    <span><strong>{asset.name}</strong><small>{asset.id} · {asset.estate}</small></span>
+                    <Command />
+                  </button>
+                ))}
+              </>
+            )}
+
+            {searchResults.vendors.length > 0 && (
+              <>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-2 pt-2">Vendors ({searchResults.vendors.length})</div>
+                {searchResults.vendors.map((vendor) => (
+                  <button key={vendor.name} onClick={() => { setOverlay(null); openVendorModal(vendor); }}>
+                    <UsersRound />
+                    <span><strong>{vendor.name}</strong><small>{vendor.specialty} · {vendor.score} rating</small></span>
+                    <ChevronRight />
+                  </button>
+                ))}
+              </>
+            )}
+
+            {searchResults.audits.length > 0 && (
+              <>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-2 pt-2">Audit trail ({searchResults.audits.length})</div>
+                {searchResults.audits.map((record) => (
+                  <button key={record.id} onClick={() => { setOverlay(null); openAuditModal(record); }}>
+                    <History />
+                    <span><strong>{record.title}</strong><small>{record.id} · {record.actor}</small></span>
+                    <ChevronRight />
+                  </button>
+                ))}
+              </>
+            )}
+
+            {searchResults.assets.length === 0 && searchResults.vendors.length === 0 && searchResults.audits.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground text-xs">
+                No matching assets, vendors, or decisions found for &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
           </div>
         </OverlayPanel>
 
@@ -630,3 +1170,4 @@ export default function Home() {
     </main>
   );
 }
+

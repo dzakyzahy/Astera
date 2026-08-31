@@ -300,13 +300,16 @@ button.asset-row:hover { background: rgb(255 255 255 / 3%); color: #d5d5df; }
 .vendor-proof svg, .vendor-row strong svg { width: 11px; }
 .recommended-dot { position: absolute; top: 8px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: #e6c36d; box-shadow: 0 0 9px #e6c36d; }
 .audit-list { display: flex; flex-direction: column; }
-.audit-list li { position: relative; display: grid; grid-template-columns: 29px 1fr; gap: 10px; padding: 0 0 15px; }
+.audit-list li { position: relative; padding: 0 0 15px; }
 .audit-list li:not(:last-child)::after { content: ''; position: absolute; left: 14px; top: 30px; bottom: 2px; width: 1px; background: rgb(255 255 255 / 8%); }
-.audit-list li > span { z-index: 1; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgb(255 255 255 / 9%); border-radius: 9px; background: #1b1c30; color: #8d8fa2; }
-.audit-list li > span svg { width: 12px; }
-.audit-list div { display: flex; flex-direction: column; gap: 3px; padding-top: 2px; }
-.audit-list strong { color: #c8c8d3; font-size: 10px; font-weight: 540; }
-.audit-list small { color: #66687b; font-size: 8px; }
+.audit-row-btn { display: grid; width: 100%; grid-template-columns: 29px 1fr; gap: 10px; border: none; background: transparent; padding: 0; text-align: left; transition: opacity 160ms ease; cursor: pointer; }
+.audit-row-btn:hover { opacity: 0.85; }
+.audit-list li > span, .audit-row-btn > span { z-index: 1; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgb(255 255 255 / 9%); border-radius: 9px; background: #1b1c30; color: #8d8fa2; }
+.audit-list li > span svg, .audit-row-btn > span svg { width: 12px; }
+.audit-list div, .audit-row-btn div { display: flex; flex-direction: column; gap: 3px; padding-top: 2px; }
+.audit-list strong, .audit-row-btn strong { color: #c8c8d3; font-size: 10px; font-weight: 540; }
+.audit-list small, .audit-row-btn small { color: #66687b; font-size: 8px; }
+.audit-list .audit-new { display: grid; grid-template-columns: 29px 1fr; gap: 10px; }
 .audit-list .audit-new > span { border-color: rgb(66 212 144 / 18%); background: rgb(43 167 111 / 9%); color: #76d9a8; }
 .product-footer { display: flex; justify-content: space-between; padding: 24px 4px 0; color: #515367; font-size: 9px; }
 
@@ -432,6 +435,10 @@ button.asset-row:hover { background: rgb(255 255 255 / 3%); color: #d5d5df; }
 .mobile-nav-list button:hover { background: rgb(255 255 255 / 4%); }
 .mobile-nav-list svg { width: 15px; }
 .mobile-nav-list svg:last-child { color: #67697d; }
+
+.asset-detail-view, .vendor-detail-view { display: flex; flex-direction: column; gap: 18px; }
+.asset-detail-view strong, .vendor-detail-view strong { font-variant-numeric: tabular-nums; }
+
 
 .standalone-state { display: flex; min-height: 100vh; max-width: 620px; margin: 0 auto; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 32px 22px; text-align: center; }
 .standalone-state h1 { max-width: 560px; color: #f1f0f7; font-size: clamp(30px, 5vw, 54px); font-weight: 570; letter-spacing: -.045em; line-height: 1.02; }
