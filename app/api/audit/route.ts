@@ -1,10 +1,20 @@
 import { type NextRequest } from 'next/server';
-import { apiSuccess, handleRouteError } from '@/lib/api-response';
-import { getDbStore } from '@/lib/db/db-store';
+import { apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import type { AuditAggregateType } from '@/types/domain';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { AuditService } from '@/lib/services/audit-service';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
+    // Check if user is allowed to view audit logs (e.g. principal or manager)
+    const { role } = session.user as any;
+    if (role !== 'principal' && role !== 'estate_manager') {
+       throw new AsteraApiError(403, 'Forbidden', 'Not authorized to view audit logs');
+    }
+
     const { searchParams } = new URL(request.url);
     const aggregateType = (searchParams.get('aggregateType') as AuditAggregateType) || undefined;
     const aggregateId = searchParams.get('aggregateId') || undefined;
@@ -12,8 +22,8 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 50;
     const cursor = searchParams.get('cursor') || undefined;
 
-    const db = getDbStore();
-    const result = db.getAuditEvents({
+    const auditService = new AuditService();
+    const result = await auditService.getEvents({
       aggregateType,
       aggregateId,
       actorId,
@@ -21,7 +31,7 @@ export async function GET(request: NextRequest) {
       cursor,
     });
 
-    const chainVerification = db.verifyAuditChain();
+    const chainVerification = await auditService.verifyChainIntegrity();
 
     return apiSuccess({
       events: result.events,
@@ -36,3 +46,4 @@ export async function GET(request: NextRequest) {
     return handleRouteError(error);
   }
 }
+

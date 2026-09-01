@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { AuditAggregateType, AuditEvent, AuditVerificationResult, UserRole } from '../../types/domain';
+import { db } from '@/lib/db';
+import { auditEvents } from '@/lib/db/schema';
+import { desc, eq, and } from 'drizzle-orm';
 
 export function calculateSha256(content: string): string {
   return createHash('sha256').update(content, 'utf8').digest('hex');
@@ -21,52 +24,36 @@ export function computeAuditEventHash(
 }
 
 export class AuditService {
-  private events: AuditEvent[] = [];
   private static readonly GENESIS_PREV_HASH = '0'.repeat(64);
 
-  constructor(initialEvents: AuditEvent[] = []) {
-    this.events = [...initialEvents];
-  }
-
-  public getEvents(options?: {
+  public async getEvents(options?: {
     aggregateType?: AuditAggregateType;
     aggregateId?: string;
     actorId?: string;
     limit?: number;
     cursor?: string;
-  }): { events: AuditEvent[]; total: number; nextCursor?: string } {
-    let filtered = [...this.events];
-
-    if (options?.aggregateType) {
-      filtered = filtered.filter((e) => e.aggregateType === options.aggregateType);
-    }
-    if (options?.aggregateId) {
-      filtered = filtered.filter((e) => e.aggregateId === options.aggregateId);
-    }
-    if (options?.actorId) {
-      filtered = filtered.filter((e) => e.actorId === options.actorId);
-    }
-
-    // Sort descending by sequenceNumber (newest first)
-    filtered.sort((a, b) => b.sequenceNumber - a.sequenceNumber);
-
+  }): Promise<{ events: AuditEvent[]; total: number; nextCursor?: string }> {
+    let query = db.select().from(auditEvents).orderBy(desc(auditEvents.sequenceNumber)).$dynamic();
+    
+    if (options?.aggregateType) query = query.where(eq(auditEvents.aggregateType, options.aggregateType));
+    if (options?.aggregateId) query = query.where(eq(auditEvents.aggregateId, options.aggregateId));
+    if (options?.actorId) query = query.where(eq(auditEvents.actorId, options.actorId));
+    
+    const allEvents = await query;
     const limit = options?.limit ?? 50;
-    const startIndex = options?.cursor
-      ? filtered.findIndex((e) => e.id === options.cursor) + 1
-      : 0;
-
-    const page = filtered.slice(startIndex, startIndex + limit);
-    const nextCursor =
-      startIndex + limit < filtered.length ? page[page.length - 1]?.id : undefined;
+    const startIndex = options?.cursor ? allEvents.findIndex((e) => e.id === options.cursor) + 1 : 0;
+    
+    const page = allEvents.slice(startIndex, startIndex + limit);
+    const nextCursor = startIndex + limit < allEvents.length ? page[page.length - 1]?.id : undefined;
 
     return {
-      events: page,
-      total: filtered.length,
+      events: page as unknown as AuditEvent[],
+      total: allEvents.length,
       nextCursor,
     };
   }
 
-  public recordEvent(params: {
+  public async recordEvent(params: {
     aggregateType: AuditAggregateType;
     aggregateId: string;
     actorId: string;
@@ -75,14 +62,17 @@ export class AuditService {
     action: string;
     payload: Record<string, unknown>;
     occurredAt?: string;
-  }): AuditEvent {
-    const sequenceNumber = this.events.length + 1;
-    const previousHash =
-      this.events.length === 0
-        ? AuditService.GENESIS_PREV_HASH
-        : this.events[this.events.length - 1].hash;
-
+  }): Promise<AuditEvent> {
     const occurredAt = params.occurredAt || new Date().toISOString();
+    
+    // In a real high-throughput system, this requires a transaction with SERIALIZABLE isolation 
+    // or a specialized queue to prevent race conditions on sequenceNumber and previousHash.
+    // For this pilot MVP, we fetch the latest event directly.
+    const latestEventResult = await db.select().from(auditEvents).orderBy(desc(auditEvents.sequenceNumber)).limit(1);
+    const latestEvent = latestEventResult[0];
+
+    const sequenceNumber = latestEvent ? latestEvent.sequenceNumber + 1 : 1;
+    const previousHash = latestEvent ? latestEvent.hash : AuditService.GENESIS_PREV_HASH;
 
     const hash = computeAuditEventHash(
       sequenceNumber,
@@ -95,7 +85,7 @@ export class AuditService {
       occurredAt
     );
 
-    const event: AuditEvent = {
+    const eventToInsert = {
       id: `AUD-${String(sequenceNumber).padStart(6, '0')}`,
       sequenceNumber,
       aggregateType: params.aggregateType,
@@ -107,34 +97,30 @@ export class AuditService {
       previousHash,
       hash,
       payload: params.payload,
-      occurredAt,
+      occurredAt: new Date(occurredAt),
     };
 
-    this.events.push(event);
-    return event;
+    const inserted = await db.insert(auditEvents).values(eventToInsert).returning();
+    
+    return { ...inserted[0], occurredAt: inserted[0].occurredAt.toISOString() } as unknown as AuditEvent;
   }
 
-  public verifyChainIntegrity(): AuditVerificationResult {
+  public async verifyChainIntegrity(): Promise<AuditVerificationResult> {
     const verifiedAt = new Date().toISOString();
-
-    if (this.events.length === 0) {
-      return {
-        valid: true,
-        totalEvents: 0,
-        chainLength: 0,
-        verifiedAt,
-      };
+    const allEventsResult = await db.select().from(auditEvents).orderBy(auditEvents.sequenceNumber);
+    
+    if (allEventsResult.length === 0) {
+      return { valid: true, totalEvents: 0, chainLength: 0, verifiedAt };
     }
 
-    for (let i = 0; i < this.events.length; i++) {
-      const current = this.events[i];
-      const expectedPrevHash =
-        i === 0 ? AuditService.GENESIS_PREV_HASH : this.events[i - 1].hash;
+    for (let i = 0; i < allEventsResult.length; i++) {
+      const current = allEventsResult[i];
+      const expectedPrevHash = i === 0 ? AuditService.GENESIS_PREV_HASH : allEventsResult[i - 1].hash;
 
       if (current.previousHash !== expectedPrevHash) {
         return {
           valid: false,
-          totalEvents: this.events.length,
+          totalEvents: allEventsResult.length,
           chainLength: i,
           brokenEventId: current.id,
           brokenSequenceNumber: current.sequenceNumber,
@@ -146,18 +132,18 @@ export class AuditService {
       const recomputedHash = computeAuditEventHash(
         current.sequenceNumber,
         current.previousHash,
-        current.aggregateType,
+        current.aggregateType as AuditAggregateType,
         current.aggregateId,
         current.actorId,
         current.action,
-        current.payload,
-        current.occurredAt
+        current.payload as Record<string, unknown>,
+        current.occurredAt.toISOString()
       );
 
       if (current.hash !== recomputedHash) {
         return {
           valid: false,
-          totalEvents: this.events.length,
+          totalEvents: allEventsResult.length,
           chainLength: i,
           brokenEventId: current.id,
           brokenSequenceNumber: current.sequenceNumber,
@@ -167,11 +153,7 @@ export class AuditService {
       }
     }
 
-    return {
-      valid: true,
-      totalEvents: this.events.length,
-      chainLength: this.events.length,
-      verifiedAt,
-    };
+    return { valid: true, totalEvents: allEventsResult.length, chainLength: allEventsResult.length, verifiedAt };
   }
 }
+
