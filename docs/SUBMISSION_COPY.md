@@ -11,7 +11,7 @@ ASTERA is a private estate operations OS for principals and professional estate 
 ## Judge-facing differentiation
 
 - A complete, demonstrable outcome instead of a generic dashboard.
-- Memorable anime-inspired 3D identity without sacrificing professional trust.
+- Premium light-mode design with architectural warmth — credible for high-trust estate decisions.
 - Human-in-the-loop AI boundaries appropriate for high-value decisions.
 - A focused Indonesia-first wedge with a credible path to family-office and premium hospitality operations.
 - Privacy, authorization, and auditability designed into the workflow rather than added as decoration.

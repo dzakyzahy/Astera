@@ -41,7 +41,7 @@ The initial wedge is the professional estate manager responsible for two to ten 
 - **Evidence before action:** costs, photos, scope, and risk remain attached to the decision.
 - **Least privilege:** every role sees only the estates and records needed for its job.
 - **Auditability:** important state changes are append-only events in production.
-- **Delight with restraint:** anime-inspired 3D art creates memorability; operational surfaces stay professional and legible.
+- **Delight with restraint:** memorability comes from material quality, spacing, and typography — not from decorative illustration. Operational surfaces stay professional and legible.
 
 ## Prototype scope
 

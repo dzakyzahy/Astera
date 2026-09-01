@@ -23,7 +23,7 @@
 
 - [ ] 360 px, 768 px, 1024 px, and 1440 px widths remain usable.
 - [ ] Keyboard-only users can complete the golden workflow.
-- [ ] Focus indicators are visible against the dark theme.
+- [ ] Focus indicators are visible against the light theme.
 - [ ] Interactive controls have accessible names and sufficient target size.
 - [ ] Text and essential status indicators meet contrast expectations.
 - [ ] Reduced-motion preference disables non-essential motion.
