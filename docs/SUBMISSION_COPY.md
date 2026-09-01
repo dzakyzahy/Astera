@@ -6,7 +6,7 @@ ASTERA turns estate incidents, vendor quotes, approvals, assets, and audit trail
 
 ## Short pitch
 
-ASTERA is a private estate operations OS for principals and professional estate managers. It transforms fragmented chats, spreadsheets, calls, and vendor decisions into one evidence-led workflow—from incident report to accountable approval, dispatch, and audit trail.
+ASTERA is a private estate operations OS for principals and professional estate managers. It transforms fragmented chats, spreadsheets, calls, and vendor decisions into one evidence-led workflow—from incident report to accountable approval, dispatch checkpoint, and audit trail. The contest workflow and all records are synthetic.
 
 ## Judge-facing differentiation
 

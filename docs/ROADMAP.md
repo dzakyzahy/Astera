@@ -13,7 +13,7 @@
 - [x] Original social/hero visual and metadata
 - [x] Resettable golden walkthrough
 - [x] Product, architecture, data, demo, build, deployment, and QA documentation
-- [ ] Final cross-browser and device validation
+- [x] Final cross-browser and device validation
 - [ ] Contest submission and video capture
 
 ## P1 — Pilot foundation

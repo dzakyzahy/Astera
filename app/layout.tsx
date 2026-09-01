@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     siteName: 'ASTERA',
     images: [
       {
-        url: 'https://astera-estate-ops.onyonn.chatgpt.site/og.png',
-        width: 1600,
-        height: 900,
+        url: 'https://astera-estate-ops.onyonn.chatgpt.site/og-light.png',
+        width: 1672,
+        height: 941,
         alt: 'ASTERA private estate operations command center',
       },
     ],
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     title: 'ASTERA — Private Estate Operations',
     description:
       'A calm command center for private estates, trusted vendors, accountable approvals, and incident response.',
-    images: ['https://astera-estate-ops.onyonn.chatgpt.site/og.png'],
+    images: ['https://astera-estate-ops.onyonn.chatgpt.site/og-light.png'],
   },
   alternates: {
     canonical: 'https://astera-estate-ops.onyonn.chatgpt.site',
@@ -51,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

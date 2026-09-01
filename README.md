@@ -4,7 +4,7 @@
 
 ASTERA is a responsive command center for principals and professional estate managers. It turns scattered incidents, vendor quotes, approvals, assets, and audit records into one calm workflow with clear human authority.
 
-![ASTERA social preview](public/og.png)
+![ASTERA social preview](public/og-light.png)
 
 ## Why it exists
 
@@ -16,9 +16,9 @@ Premium residences and villas are often operated through chat threads, spreadshe
 2. ASTERA structures the evidence and proposes severity and containment.
 3. The estate manager compares normalized vendor quotes.
 4. The principal explicitly acknowledges and approves the selected scope.
-5. The vendor dispatch and accountable decision appear in the audit trail.
+5. A separate simulated-dispatch action and the accountable approval appear in the audit trail.
 
-The current competition build uses synthetic in-browser data. It does not contact a real vendor, move money, control a property, or store personal household information.
+The current competition build uses synthetic data served by an in-memory API. It does not contact a real vendor, move money, control a property, or store personal household information.
 
 ## Product highlights
 
@@ -27,7 +27,7 @@ The current competition build uses synthetic in-browser data. It does not contac
 - evidence-led quote comparison;
 - explicit approval boundary for spend above manager limits;
 - dispatch plan, assets, trusted vendors, notifications, search, and audit timeline;
-- original anime-inspired 3D concierge used as a restrained visual hook;
+- evidence-led estate pulse and accountable incident timeline as the primary visual focus;
 - responsive, keyboard-aware overlays with reduced-motion support;
 - error, loading, reset, privacy, and synthetic-data states.
 

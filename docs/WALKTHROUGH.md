@@ -22,7 +22,7 @@ Choose **Review vendor quotes**. Compare the two normalized proposals by total c
 
 ### 0:55–1:10 — Preserve human authority
 
-Continue to approval. Confirm the authorization statement, then approve and dispatch. The UI changes from an unresolved incident to a vendor-dispatched state and records the decision in the timeline.
+Continue to approval. Confirm the authorization statement, record the approval, then use the separate simulated-dispatch checkpoint. The UI records both decisions while clearly stating that no external vendor was contacted.
 
 ### 1:10–1:25 — Demonstrate operational depth
 
@@ -40,8 +40,8 @@ Show the dispatch plan, asset context, trusted vendor information, notifications
 4. Compare both proposals and choose one.
 5. Continue to approval.
 6. Tick the authorization confirmation.
-7. Approve and dispatch.
-8. Open **Dispatch plan**.
+7. Record the approval.
+8. Choose **Record simulated dispatch** and review the synthetic dispatch plan.
 9. Open notifications and search to demonstrate supporting workflows.
 10. Use **Reset demo** before the next presentation.
 
@@ -52,3 +52,13 @@ Show the dispatch plan, asset context, trusted vendor information, notifications
 - Keep the walkthrough focused on one complete outcome rather than visiting every panel.
 - State clearly that demo records and integrations are synthetic.
 - Never imply that the prototype moved real money or contacted a real vendor.
+
+## Capture stills
+
+With the local app running, generate a repeatable 1440 × 900 shot sequence:
+
+```bash
+npm run capture:stills
+```
+
+The ignored `outputs/demo-stills/` directory contains seven numbered PNG files and a manifest recording the browser, viewport, source URL, and synthetic/no-external-action boundary. Use these frames as a recording shot list or submission fallback; they are not evidence of a real vendor dispatch.

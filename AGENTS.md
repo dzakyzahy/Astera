@@ -37,3 +37,7 @@ ASTERA is a private estate operations command center. Preserve the incident-to-t
 ## Completion checklist
 
 Confirm the golden workflow, anonymity guard, trust copy, keyboard behavior, responsive layout, lint, and production build. Update relevant files in `docs/` when product behavior or architecture changes.
+
+## Multi-agent coordination
+
+When Scope 1 (frontend) and Scope 2 (backend) are active at the same time, read `docs/coordination/README.md` and both agent outboxes before starting work. Each agent writes only to its own outbox, respects the ownership boundaries in `docs/SCOPING.md`, and records cross-scope questions or execution requests through the coordination protocol.

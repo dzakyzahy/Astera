@@ -2,22 +2,23 @@
 
 ## Current contest build
 
-ASTERA is currently a responsive Next.js application packaged for Sites-compatible hosting. It is intentionally a front-end product prototype: all displayed properties, people, incidents, quotes, and audit events are synthetic and run in the browser.
+ASTERA is currently a responsive Next.js contest prototype packaged for Sites-compatible hosting. Its UI consumes typed, in-memory server API routes; every property, person, incident, quote, work order, and audit event remains anonymous and synthetic.
 
 ```text
 User interaction
       |
 Next.js App Router
       |
-ASTERA dashboard state
-      |---- estate portfolio view
-      |---- incident intake and triage simulation
-      |---- quote review and approval state machine
-      |---- search, notifications, privacy and role panels
-      `---- synthetic demo dataset
+Typed client adapter
+      |
+Synthetic API + domain services
+      |---- portfolio, assets, incidents, and quotes
+      |---- server-enforced approval and dispatch state machine
+      |---- idempotency locks, outbox, and audit verification
+      `---- resettable in-memory contest dataset
 ```
 
-This boundary makes the demonstration safe and deterministic. It also prevents the interface from suggesting that a real payment, dispatch, or home-control action occurred.
+This boundary makes the demonstration safe, repeatable, and contract-testable. The dispatch route records only a synthetic contest event; it has no external vendor connector, payment rail, or property-control capability.
 
 ## Production target
 

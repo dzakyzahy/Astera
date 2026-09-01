@@ -4,7 +4,7 @@ This guide is a handoff for continuing ASTERA in Emergent or another app-buildin
 
 ## Product north star
 
-Build a private estate operations command center for professional estate managers and principals. The anime-inspired 3D concierge is a memorable visual hook, while all operational interfaces remain calm, credible, accessible, and suitable for high-trust decisions.
+Build a private estate operations command center for professional estate managers and principals. Use the Cloud + Sienna light-mode system, editorial typography, and evidence-led operational composition so the product remains calm, credible, accessible, and suitable for high-trust decisions. Do not introduce a mascot or anime-style concierge.
 
 ## Recommended build sequence
 
@@ -20,7 +20,7 @@ Build a private estate operations command center for professional estate manager
 
 ## Master build prompt
 
-> Build ASTERA, a responsive private estate operations command center for principals and professional estate managers in Indonesia. The UI uses a midnight-indigo, champagne-gold visual system with restrained anime-inspired 3D concierge artwork as a memorable hook. Operational surfaces must look professional, calm, and trustworthy. The golden workflow is a water leak at a Bali villa: report by text/photo/voice, structure the evidence, suggest severity and containment, compare two normalized vendor quotes, require explicit human approval, dispatch a work order, and record an audit event. Include portfolio KPIs, estate switching, assets, vendors, search, notifications, role/privacy panels, a resettable synthetic demo, mobile responsiveness, keyboard support, loading/error states, and visible disclosure that all demo data is synthetic. Do not claim real security certifications, integrations, payments, dispatches, or AI actions unless they are actually implemented. AI recommendations must be advisory and evidence-linked; only an authorized human may approve spend or dispatch.
+> Build ASTERA, a responsive private estate operations command center for principals and professional estate managers in Indonesia. Use the Cloud + Sienna light-mode palette, restrained editorial typography, warm architectural photography only where it carries operational meaning, and no mascot artwork. Operational surfaces must look professional, calm, and trustworthy. The golden workflow is a water leak at a Bali villa: report by text/photo/voice, structure the evidence, suggest severity and containment, compare two normalized vendor quotes, require explicit human approval, record a separate synthetic dispatch action, and append an audit event. Include portfolio KPIs, estate switching, assets, vendors, search, notifications, role/privacy panels, a resettable synthetic demo, mobile responsiveness, keyboard support, loading/error states, and visible disclosure that all demo data is synthetic. Do not claim real security certifications, integrations, payments, dispatches, or AI actions unless they are actually implemented. AI recommendations must be advisory and evidence-linked; only an authorized human may approve spend or initiate dispatch.
 
 ## Production integration contract
 

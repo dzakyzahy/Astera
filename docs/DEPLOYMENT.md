@@ -14,8 +14,7 @@ Open `http://localhost:3000`.
 ## Production verification
 
 ```bash
-npm run lint
-npm run build
+npm run check
 ```
 
 Do not deploy when either command fails.
@@ -24,7 +23,7 @@ Do not deploy when either command fails.
 
 The canonical repository is the private GitHub repository `dzakyzahy/Astera` on branch `main`. Import that repository into Emergent, keep the repository private, and configure platform secrets through the deployment settings.
 
-The prototype has no required runtime secrets because it uses synthetic browser data. Production integrations will need environment-specific credentials and should fail closed when those values are absent.
+The prototype has no required runtime secrets because its API and in-memory store contain synthetic contest data only. Production integrations will need environment-specific credentials and should fail closed when those values are absent.
 
 ## Sites-compatible deployment
 

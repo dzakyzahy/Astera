@@ -5,7 +5,7 @@ const root = process.cwd();
 const requiredFiles = [
   'app/page.tsx',
   'app/globals.css',
-  'public/og.png',
+  'public/og-light.png',
   'docs/PRODUCT_BRIEF.md',
   'docs/ARCHITECTURE.md',
   'docs/WALKTHROUGH.md',

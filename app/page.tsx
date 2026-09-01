@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import Image from 'next/image';
+import { usePortfolioOverview } from '@/hooks/use-portfolio-overview';
+import { useIncidentQuotes } from '@/hooks/use-incident-quotes';
+import { useOperationsData } from '@/hooks/use-operations-data';
+import { AsteraApiClient, AsteraApiError } from '@/lib/adapters/client-api';
+import type { Asset, AuditEvent, Vendor } from '@/types/domain';
 import {
   Activity,
   BadgeCheck,
@@ -54,7 +58,7 @@ const navigation = [
 type AssetData = {
   id: string;
   name: string;
-  estate: 'Jakarta Residence' | 'Bali Villa';
+  estate: string;
   state: 'Attention' | 'Scheduled' | 'Healthy';
   next: string;
   location: string;
@@ -65,7 +69,7 @@ type AssetData = {
   logs: { date: string; summary: string; technician: string }[];
 };
 
-const assetList: AssetData[] = [
+const fallbackAssetList: AssetData[] = [
   {
     id: 'BLI-HVAC-04',
     name: 'Master-suite HVAC',
@@ -159,7 +163,7 @@ type VendorData = {
   capabilities: string[];
 };
 
-const vendorList: VendorData[] = [
+const fallbackVendorList: VendorData[] = [
   {
     name: 'Bali Climate Works',
     specialty: 'HVAC & moisture control',
@@ -203,16 +207,16 @@ type AuditRecord = {
   title: string;
   actor: string;
   time: string;
-  estate: 'Jakarta Residence' | 'Bali Villa';
+  estate: string;
   hash: string;
   summary: string;
 };
 
-const auditRecords: AuditRecord[] = [
+const fallbackAuditRecords: AuditRecord[] = [
   {
     id: 'EVT-0829-994',
     title: 'Vendor comparison prepared',
-    actor: 'ASTERA Concierge',
+    actor: 'ASTERA Workflow Engine',
     time: '09:48 WITA · 29 Aug 2026',
     estate: 'Bali Villa',
     hash: '0x8f2a99e74cb10e42d76a',
@@ -260,7 +264,115 @@ type Overlay =
   | 'audit-detail'
   | null;
 
-type Estate = 'All estates' | 'Jakarta Residence' | 'Bali Villa';
+const ALL_ESTATES = 'All estates';
+
+function mapApiAsset(asset: Asset): AssetData {
+  return {
+    id: asset.id,
+    name: asset.name,
+    estate: asset.estateLabel,
+    state: asset.state,
+    next: asset.nextScheduledService,
+    location: asset.location,
+    serial: asset.serialNumber,
+    spec: asset.specifications,
+    lastService: asset.lastServiceDate,
+    telemetry: asset.telemetry.map(({ label, value, status }) => ({ label, value, status })),
+    logs: asset.logs.map(({ date, summary, technician }) => ({ date, summary, technician })),
+  };
+}
+
+function formatComplianceDate(timestamp: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  }).format(new Date(timestamp));
+}
+
+function mapApiVendor(vendor: Vendor): VendorData {
+  const fallback = fallbackVendorList.find((item) => item.name === vendor.name);
+  return {
+    name: vendor.name,
+    specialty: vendor.category,
+    response: `${Math.round(vendor.averageSlaMinutes / 60)}h`,
+    score: vendor.rating.toFixed(1),
+    jobs: `${vendor.completedJobsCount} jobs`,
+    license: vendor.compliance.licenseNumber,
+    insurance: `${vendor.compliance.verifiedStatus === 'VERIFIED' ? 'Verified synthetic record' : 'Renewal pending'} · valid through ${formatComplianceDate(vendor.compliance.insuranceValidUntil)}`,
+    leadTech: vendor.primaryContact,
+    contract: `Synthetic contest vendor · ${vendor.activeStatus.toLowerCase()}`,
+    capabilities: fallback?.capabilities ?? vendor.serviceRegions.map((region) => `Service region · ${region}`),
+  };
+}
+
+const auditActionTitles: Record<string, string> = {
+  ORGANIZATION_INITIALIZED: 'Synthetic portfolio initialized',
+  INCIDENT_INTAKE_RECORDED: 'Incident intake recorded',
+  VENDOR_QUOTES_NORMALIZED: 'Vendor comparison prepared',
+  QUOTE_APPROVED: 'Quote approved by Principal',
+  WORK_ORDER_CREATED: 'Synthetic work order created',
+  WORK_ORDER_DISPATCHED: 'Simulated dispatch recorded',
+};
+
+function mapAuditEstate(event: AuditEvent) {
+  const estateId = typeof event.payload.estateId === 'string' ? event.payload.estateId : '';
+  if (estateId.includes('BLI') || event.aggregateId.includes('BLI')) return 'Bali Villa';
+  if (estateId.includes('JKT') || event.aggregateId.includes('JKT')) return 'Jakarta Residence';
+  if (event.aggregateType === 'INCIDENT' || event.aggregateType === 'QUOTE' || event.aggregateType === 'APPROVAL' || event.aggregateType === 'WORK_ORDER') return 'Bali Villa';
+  return 'Portfolio';
+}
+
+function mapApiAuditEvent(event: AuditEvent): AuditRecord {
+  const title = auditActionTitles[event.action] ?? event.action.toLowerCase().replaceAll('_', ' ');
+  const payloadSummary = typeof event.payload.summary === 'string'
+    ? event.payload.summary
+    : `${event.aggregateType.toLowerCase()} ${event.aggregateId} · sequence ${event.sequenceNumber}`;
+  return {
+    id: event.id,
+    title: title.charAt(0).toUpperCase() + title.slice(1),
+    actor: event.actorName,
+    time: new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta',
+      timeZoneName: 'short',
+    }).format(new Date(event.occurredAt)),
+    estate: mapAuditEstate(event),
+    hash: event.hash,
+    summary: payloadSummary,
+  };
+}
+
+function formatMetricCount(value: number) {
+  return Math.max(0, value).toString().padStart(2, '0');
+}
+
+function formatIdrCompact(value: number) {
+  if (value >= 1_000_000) {
+    const millions = value / 1_000_000;
+    return `Rp ${millions.toLocaleString('en-US', { maximumFractionDigits: 1 })}m`;
+  }
+  return `Rp ${value.toLocaleString('id-ID')}`;
+}
+
+function formatIdr(value: number) {
+  return `Rp ${value.toLocaleString('en-US')}`;
+}
+
+function formatArrival(timestamp?: string) {
+  if (!timestamp) return 'Illustrative window';
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Makassar',
+  }).format(new Date(timestamp));
+}
 
 function OverlayPanel({
   open,
@@ -355,16 +467,23 @@ function OverlayPanel({
 export default function Home() {
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [estateMenuOpen, setEstateMenuOpen] = useState(false);
-  const [selectedEstate, setSelectedEstate] = useState<Estate>('All estates');
+  const [selectedEstate, setSelectedEstate] = useState<string>(ALL_ESTATES);
   const [approved, setApproved] = useState(false);
+  const [dispatched, setDispatched] = useState(false);
   const [approvalAcknowledged, setApprovalAcknowledged] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState<'Bali Climate Works' | 'Island Estate Engineering'>('Bali Climate Works');
+  const [selectedVendor, setSelectedVendor] = useState<string>('Bali Climate Works');
   const [quoteStep, setQuoteStep] = useState<'compare' | 'confirm'>('compare');
   const [showReason, setShowReason] = useState(false);
   const [reportText, setReportText] = useState('Water is pooling near the pool equipment room. The pump sounds different than usual.');
   const [analysisState, setAnalysisState] = useState<'idle' | 'loading' | 'complete'>('idle');
   const [extraIncident, setExtraIncident] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [dataRevision, setDataRevision] = useState(0);
+  const [mutationState, setMutationState] = useState<'idle' | 'approving' | 'dispatching' | 'resetting'>('idle');
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [approvedWorkOrderId, setApprovedWorkOrderId] = useState<string | null>(null);
+  const approvalIdempotencyKeyRef = useRef<string | null>(null);
+  const dispatchIdempotencyKeyRef = useRef<string | null>(null);
 
   // Deep detail views
   const [selectedAsset, setSelectedAsset] = useState<AssetData | null>(null);
@@ -374,34 +493,115 @@ export default function Home() {
   // Search query
   const [searchQuery, setSearchQuery] = useState('');
 
-  const selectedPrice = selectedVendor === 'Bali Climate Works' ? 'Rp 8,300,000' : 'Rp 6,850,000';
+  const portfolioOverview = usePortfolioOverview(
+    selectedEstate === ALL_ESTATES ? null : selectedEstate,
+    dataRevision,
+  );
+
+  const selectedEstateId =
+    selectedEstate === ALL_ESTATES
+      ? undefined
+      : portfolioOverview.estates.find((estate) => estate.label === selectedEstate)?.id;
+  const incidentQuotes = useIncidentQuotes(selectedEstateId, dataRevision);
+  const climateQuote = incidentQuotes.quotes.find(
+    (quote) => quote.vendorName === 'Bali Climate Works',
+  );
+  const engineeringQuote = incidentQuotes.quotes.find(
+    (quote) => quote.vendorName === 'Island Estate Engineering',
+  );
+  const selectedQuote =
+    incidentQuotes.quotes.find((quote) => quote.vendorName === selectedVendor) ??
+    incidentQuotes.quotes[0];
+  const recommendedQuote =
+    incidentQuotes.quotes.find((quote) => quote.isAiRecommended) ?? incidentQuotes.quotes[0];
+  const comparisonQuote = incidentQuotes.quotes.find((quote) => quote.id !== recommendedQuote?.id);
+  const recommendationLeadHours = recommendedQuote && comparisonQuote
+    ? Math.max(
+        0,
+        Math.round(
+          (new Date(comparisonQuote.estimatedArrivalTimestamp).getTime() -
+            new Date(recommendedQuote.estimatedArrivalTimestamp).getTime()) /
+            3_600_000,
+        ),
+      )
+    : 2;
+  const effectiveSelectedVendor = selectedQuote?.vendorName ?? selectedVendor;
+
+  const selectedPrice = selectedQuote
+    ? formatIdr(selectedQuote.totalAmountMinorUnits)
+    : selectedVendor === 'Bali Climate Works'
+      ? 'Rp 18,500,000'
+      : 'Rp 14,200,000';
+  const recommendedPrice = formatIdr(recommendedQuote?.totalAmountMinorUnits ?? 18_500_000);
+  const recommendedPriceCompact = formatIdrCompact(recommendedQuote?.totalAmountMinorUnits ?? 18_500_000);
   const jakartaOnly = selectedEstate === 'Jakarta Residence';
   const baliOnly = selectedEstate === 'Bali Villa';
   const issueVisible = !jakartaOnly;
 
+  const operationsData = useOperationsData(dataRevision);
+
+  const assetList: AssetData[] = operationsData.assets.length
+    ? operationsData.assets.map(mapApiAsset)
+    : fallbackAssetList;
+  const vendorList: VendorData[] = operationsData.vendors.length
+    ? operationsData.vendors.map(mapApiVendor)
+    : fallbackVendorList;
+  const auditRecords: AuditRecord[] = operationsData.auditEvents.length
+    ? operationsData.auditEvents.map(mapApiAuditEvent)
+    : fallbackAuditRecords;
+
+  const estateOptions: string[] = portfolioOverview.estates.length
+    ? [ALL_ESTATES, ...portfolioOverview.estates.map((estate) => estate.label)]
+    : [ALL_ESTATES, 'Jakarta Residence', 'Bali Villa'];
+
   const filteredAssets = assetList.filter((a) => {
-    if (selectedEstate === 'Jakarta Residence') return a.estate === 'Jakarta Residence';
-    if (selectedEstate === 'Bali Villa') return a.estate === 'Bali Villa';
+    if (selectedEstate !== ALL_ESTATES) return a.estate === selectedEstate;
     return true;
   });
+
+  const openIncidentCount =
+    (portfolioOverview.kpis?.openIncidentsCount ?? (jakartaOnly ? 0 : 1)) +
+    (extraIncident && !jakartaOnly ? 1 : 0);
+  const pendingApprovalCount = approved
+    ? 0
+    : (portfolioOverview.kpis?.pendingApprovalsCount ?? (jakartaOnly ? 0 : 1));
+  const costAvoidance = portfolioOverview.kpis?.costAvoidanceMinorUnits ?? (jakartaOnly ? 0 : 18_500_000);
+  const portfolioStability = portfolioOverview.kpis
+    ? `${Math.round(portfolioOverview.kpis.healthyAssetsPercentage)}% assets healthy`
+    : approved
+      ? '96% stable'
+      : jakartaOnly
+        ? '98% stable'
+        : '92% stable';
+  const dataSourceLabel =
+    portfolioOverview.status === 'ready'
+      ? 'API connected · synthetic contract verified'
+      : portfolioOverview.status === 'loading'
+        ? 'Refreshing synthetic API'
+        : 'Local demo fallback · API unavailable';
 
   const dashboardMetrics = [
     {
       label: 'Open incidents',
-      value: jakartaOnly ? '00' : extraIncident ? '02' : '01',
-      detail: jakartaOnly ? 'No active issues' : approved ? '1 vendor assigned' : '1 high priority',
-      tone: jakartaOnly ? 'emerald' : 'amber',
+      value: formatMetricCount(openIncidentCount),
+      detail: openIncidentCount === 0 ? 'No active issues' : approved ? '1 dispatch plan simulated' : '1 high priority',
+      tone: openIncidentCount === 0 ? 'emerald' : 'amber',
     },
-    { label: 'SLA at risk', value: '00', detail: 'All within target', tone: 'emerald' },
+    {
+      label: 'SLA at risk',
+      value: formatMetricCount(portfolioOverview.kpis?.slaAtRiskCount ?? 0),
+      detail: 'All within target',
+      tone: 'emerald',
+    },
     {
       label: 'Pending approvals',
-      value: jakartaOnly || approved ? '00' : '01',
-      detail: jakartaOnly || approved ? 'Nothing waiting' : 'Rp 8.3m awaiting',
+      value: formatMetricCount(pendingApprovalCount),
+      detail: pendingApprovalCount === 0 ? 'Nothing waiting' : `${recommendedPriceCompact} awaiting`,
       tone: 'violet',
     },
     {
       label: approved ? 'Value protected' : 'Cost avoidance',
-      value: jakartaOnly ? 'Rp 0' : 'Rp 18.5m',
+      value: formatIdrCompact(costAvoidance),
       detail: approved ? 'Simulated estimate' : 'Potential · demo estimate',
       tone: 'gold',
     },
@@ -433,31 +633,116 @@ export default function Home() {
 
   const openQuotes = () => {
     setQuoteStep('compare');
+    setMutationError(null);
     setOverlay('quotes');
   };
 
-  const approveQuote = () => {
-    if (!approvalAcknowledged) return;
-    setApproved(true);
-    setApprovalAcknowledged(false);
-    setOverlay(null);
-    setToastMessage('Approval recorded. Bali Climate Works has been dispatched.');
+  const getMutationErrorMessage = (error: unknown) => {
+    if (error instanceof AsteraApiError) {
+      return error.problem.detail || error.message;
+    }
+    return error instanceof Error ? error.message : 'The synthetic workflow could not be updated.';
   };
 
-  const resetDemo = () => {
-    setApproved(false);
-    setExtraIncident(false);
-    setSelectedEstate('All estates');
-    setSelectedVendor('Bali Climate Works');
-    setQuoteStep('compare');
-    setApprovalAcknowledged(false);
-    setAnalysisState('idle');
-    setShowReason(false);
-    setSelectedAsset(null);
-    setSelectedVendorDetail(null);
-    setSelectedAuditRecord(null);
-    setSearchQuery('');
-    setToastMessage('Demo restored to the initial incident state.');
+  const approveQuote = async () => {
+    if (!approvalAcknowledged || !selectedQuote || !incidentQuotes.incident) return;
+
+    setMutationState('approving');
+    setMutationError(null);
+    approvalIdempotencyKeyRef.current ??= crypto.randomUUID();
+
+    try {
+      const response = await AsteraApiClient.approveQuote({
+        incidentId: incidentQuotes.incident.id,
+        quoteId: selectedQuote.id,
+        approverId: 'USR-PRIN-01',
+        approverName: 'Estate Principal',
+        approverRole: 'principal',
+        explicitAck: true,
+        notes: 'Quote reviewed and approved in the synthetic contest workflow.',
+        idempotencyKey: approvalIdempotencyKeyRef.current,
+      });
+
+      if (response.meta.synthetic !== true) {
+        throw new Error('Approval response is missing ASTERA synthetic-data metadata.');
+      }
+
+      setApprovedWorkOrderId(response.workOrder.id);
+      setApproved(true);
+      setApprovalAcknowledged(false);
+      setMutationState('idle');
+      setToastMessage(`Synthetic approval recorded for ${effectiveSelectedVendor}. Dispatch still requires a separate action.`);
+    } catch (error) {
+      setMutationState('idle');
+      setMutationError(getMutationErrorMessage(error));
+    }
+  };
+
+  const dispatchWorkOrder = async () => {
+    if (!approvedWorkOrderId || mutationState !== 'idle') return;
+
+    setMutationState('dispatching');
+    setMutationError(null);
+    dispatchIdempotencyKeyRef.current ??= crypto.randomUUID();
+
+    try {
+      const response = await AsteraApiClient.dispatchWorkOrder({
+        workOrderId: approvedWorkOrderId,
+        idempotencyKey: dispatchIdempotencyKeyRef.current,
+        notes: 'Synthetic dispatch connector invoked for contest demonstration only.',
+        actorId: 'USR-PRIN-01',
+        actorRole: 'principal',
+      });
+
+      if (response.meta.synthetic !== true) {
+        throw new Error('Dispatch response is missing ASTERA synthetic-data metadata.');
+      }
+
+      setDispatched(true);
+      setMutationState('idle');
+      setOverlay(null);
+      setToastMessage('Simulated dispatch recorded. No external vendor was contacted.');
+    } catch (error) {
+      setMutationState('idle');
+      setMutationError(getMutationErrorMessage(error));
+    }
+  };
+
+  const resetDemo = async () => {
+    if (mutationState !== 'idle') return;
+
+    setMutationState('resetting');
+    setMutationError(null);
+
+    try {
+      const response = await AsteraApiClient.resetDemo();
+      if (response.meta.synthetic !== true) {
+        throw new Error('Reset response is missing ASTERA synthetic-data metadata.');
+      }
+
+      setApproved(false);
+      setDispatched(false);
+      setApprovedWorkOrderId(null);
+      approvalIdempotencyKeyRef.current = null;
+      dispatchIdempotencyKeyRef.current = null;
+      setExtraIncident(false);
+      setSelectedEstate(ALL_ESTATES);
+      setSelectedVendor('Bali Climate Works');
+      setQuoteStep('compare');
+      setApprovalAcknowledged(false);
+      setAnalysisState('idle');
+      setShowReason(false);
+      setSelectedAsset(null);
+      setSelectedVendorDetail(null);
+      setSelectedAuditRecord(null);
+      setSearchQuery('');
+      setDataRevision((revision) => revision + 1);
+      setMutationState('idle');
+      setToastMessage('Synthetic demo restored to the initial awaiting-approval state.');
+    } catch (error) {
+      setMutationState('idle');
+      setToastMessage(`Reset failed: ${getMutationErrorMessage(error)}`);
+    }
   };
 
   const analyzeReport = () => {
@@ -548,7 +833,7 @@ export default function Home() {
             </button>
             {estateMenuOpen && (
               <div className="estate-menu" role="menu">
-                {(['All estates', 'Jakarta Residence', 'Bali Villa'] as Estate[]).map((estate) => (
+                {estateOptions.map((estate) => (
                   <button
                     key={estate}
                     role="menuitem"
@@ -590,7 +875,8 @@ export default function Home() {
         <section className="workspace" id="overview">
           <div className="demo-notice">
             <span className="demo-notice-dot" />
-            Competition preview · all properties, people and metrics use synthetic data
+            <span>Competition preview · all properties, people and metrics use synthetic data</span>
+            <output aria-live="polite">· {dataSourceLabel}</output>
           </div>
 
           <div className="workspace-heading">
@@ -610,7 +896,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="secondary-action hidden sm:inline-flex" onClick={resetDemo}><RotateCcw />Reset demo</button>
+              <button className="secondary-action hidden sm:inline-flex" onClick={resetDemo} disabled={mutationState !== 'idle'}><RotateCcw className={mutationState === 'resetting' ? 'spin' : undefined} />{mutationState === 'resetting' ? 'Resetting…' : 'Reset demo'}</button>
               <button className="primary-action" onClick={() => setOverlay('report')}><Plus />Report incident</button>
             </div>
           </div>
@@ -624,7 +910,7 @@ export default function Home() {
                 </div>
                 <span className="healthy-badge">
                   <span className="size-1.5 rounded-full bg-emerald-400" />
-                  {approved ? '96% stable' : jakartaOnly ? '98% stable' : '92% stable'}
+                  {portfolioStability}
                 </span>
               </div>
 
@@ -648,19 +934,17 @@ export default function Home() {
                 <button
                   className="estate-node bali-node"
                   data-selected={selectedEstate === 'Bali Villa' || undefined}
-                  aria-label={`Bali Villa, ${approved ? 'vendor dispatched' : 'high priority water leak'}`}
+                  aria-label={`Bali Villa, ${dispatched ? 'simulated dispatch recorded' : approved ? 'approved for simulated dispatch' : 'high priority water leak'}`}
                   onClick={() => setSelectedEstate(selectedEstate === 'Bali Villa' ? 'All estates' : 'Bali Villa')}
                 >
                   {!approved && <span className="node-pulse node-pulse-alert" />}
                   <span className={`node-core ${approved ? 'node-core-assigned' : 'node-core-alert'}`}>{approved ? <Wrench /> : <TriangleAlert />}</span>
-                  <span className={`node-label ${approved ? '' : 'node-label-alert'}`}><strong>Bali Villa</strong><small>{approved ? 'Vendor assigned · arrival 10:45' : 'High priority · water leak'}</small></span>
+                  <span className={`node-label ${approved ? '' : 'node-label-alert'}`}><strong>Bali Villa</strong><small>{dispatched ? 'Dispatch simulated · no vendor contacted' : approved ? 'Approved · dispatch action pending' : 'High priority · water leak'}</small></span>
                 </button>
 
-                <div className="concierge-orb" aria-label="Astera concierge is monitoring two estates">
-                  <Image src="/og.png" alt="Original ASTERA concierge character" width={1600} height={900} priority sizes="96px" />
-                  <span className="concierge-spark"><Sparkles /></span>
-                  <span className="concierge-ring" />
-                  <div className="concierge-copy"><strong>ASTERA Concierge</strong><small>Monitoring 8 critical assets</small></div>
+                <div className="workflow-hub" aria-label="ASTERA is monitoring the human-authorized estate workflow">
+                  <span className="workflow-hub-icon"><ClipboardCheck /></span>
+                  <div><strong>Human-authorized operations</strong><small>8 critical assets · synthetic workspace</small></div>
                 </div>
 
                 <div className="map-caption">
@@ -681,34 +965,34 @@ export default function Home() {
                   )}
                   <div className="incident-topline">
                     <span className={`priority-badge ${approved ? 'assigned-badge' : ''}`}>
-                      {approved ? <CheckCircle2 /> : <TriangleAlert />}{approved ? 'Vendor assigned' : 'High priority'}
+                      {approved ? <CheckCircle2 /> : <TriangleAlert />}{dispatched ? 'Dispatch simulated' : approved ? 'Approval recorded' : 'High priority'}
                     </span>
-                    <span className="incident-id">INC-BLI-0829-014</span>
+                    <span className="incident-id">{incidentQuotes.incident?.referenceNumber ?? 'INC-BLI-0829-014'}</span>
                   </div>
                   <div>
-                    <p className="eyebrow"><Clock3 className="size-3.5" />{approved ? 'Dispatch confirmed at 09:55 WITA' : 'Reported 18 minutes ago'}</p>
-                    <h2 id="incident-title">Water leak beside the master-suite wardrobe</h2>
-                    <p className="incident-description">Possible HVAC condensate failure. The affected unit has been isolated and nearby valuables moved.</p>
+                    <p className="eyebrow"><Clock3 className="size-3.5" />{dispatched ? 'Simulated dispatch recorded just now' : approved ? 'Human approval recorded just now' : 'Reported 18 minutes ago'}</p>
+                    <h2 id="incident-title">{incidentQuotes.incident?.summary ?? 'Water leak beside the master-suite wardrobe'}</h2>
+                    <p className="incident-description">{incidentQuotes.incident?.description ?? 'Possible HVAC condensate failure. The affected unit has been isolated and nearby valuables moved.'}</p>
                   </div>
                   <div className="evidence-row" aria-label="Available incident evidence"><span>Photo</span><span>Sensor</span><span>Service history</span></div>
                   <div className={`ai-recommendation ${approved ? 'recommendation-approved' : ''}`}>
                     <div className="ai-icon">{approved ? <CheckCircle2 /> : <Sparkles />}</div>
                     <div>
                       <p className="ai-label">{approved ? 'Approval recorded · accountable action' : 'AI suggestion · human approval required'}</p>
-                      <p>{approved ? <><strong>Bali Climate Works</strong> is en route. Arrival window: 10:35–10:50 WITA.</> : <>Bali Climate Works can arrive <strong>3 hours sooner</strong> and includes overnight moisture control.</>}</p>
+                      <p>{approved ? <><strong>{effectiveSelectedVendor}</strong> has an illustrative arrival window. No external vendor was contacted.</> : <><strong>{recommendedQuote?.vendorName ?? 'Bali Climate Works'}</strong> can arrive <strong>{recommendationLeadHours} hours sooner</strong> and includes the strongest synthetic coverage.</>}</p>
                       <button onClick={() => setShowReason((value) => !value)}>{showReason ? 'Hide evidence' : approved ? 'View decision evidence' : 'Why this recommendation?'}</button>
-                      {showReason && <p className="reason-copy">Compared price, verified SLA, 90-day warranty, moisture-control coverage, and guest arrival in two days.</p>}
+                      {showReason && <p className="reason-copy">{recommendedQuote?.aiRecommendationRationale ?? 'Compared price, verified SLA, warranty, moisture-control coverage, and guest arrival in two days.'}</p>}
                     </div>
                   </div>
                   <div className="incident-facts">
-                    <div><span>Asset matched</span><strong>BLI-HVAC-04</strong></div>
+                    <div><span>Asset matched</span><strong>{incidentQuotes.incident?.assetId ?? 'BLI-HVAC-04'}</strong></div>
                     <div><span>Guest arrival</span><strong>In 2 days</strong></div>
-                    <div><span>{approved ? 'Approved spend' : 'Recommended quote'}</span><strong>Rp 8,300,000</strong></div>
+                    <div><span>{approved ? 'Approved spend' : 'Recommended quote'}</span><strong>{approved ? selectedPrice : recommendedPrice}</strong></div>
                   </div>
                   <button className={`review-action ${approved ? 'dispatch-action' : ''}`} onClick={openQuotes}>
-                    {approved ? 'View dispatch plan' : 'Review vendor quotes'}<span aria-hidden="true">→</span>
+                    {dispatched ? 'View simulated dispatch' : approved ? 'Continue to simulated dispatch' : 'Review vendor quotes'}<span aria-hidden="true">→</span>
                   </button>
-                  <p className="approval-note"><ShieldCheck className="size-3.5" />{approved ? 'Approval, role, amount, and timestamp are recorded.' : 'No vendor is dispatched without accountable approval.'}</p>
+                  <p className="approval-note"><ShieldCheck className="size-3.5" />{dispatched ? 'Synthetic dispatch and accountable approval are recorded.' : approved ? 'Approval recorded; dispatch remains a separate explicit action.' : 'No vendor is dispatched without accountable approval.'}</p>
                 </>
               ) : (
                 <div className="all-clear-state">
@@ -744,7 +1028,9 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground hidden md:inline">Showing: <strong className="text-foreground">{selectedEstate}</strong> ({filteredAssets.length})</span>
-                <span className="data-stamp"><LockKeyhole /> Role-based view · synthetic data</span>
+                <span className="data-stamp" title={portfolioOverview.error ?? undefined}>
+                  <LockKeyhole /> {dataSourceLabel}
+                </span>
               </div>
             </div>
             <div className="asset-table" aria-label="Critical estate assets">
@@ -755,12 +1041,12 @@ export default function Home() {
                 <button
                   key={asset.id}
                   className="asset-row"
-                  aria-label={`${asset.name}, ${asset.estate}, ${approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}, ${asset.next}`}
+                  aria-label={`${asset.name}, ${asset.estate}, ${dispatched && asset.id === 'BLI-HVAC-04' ? 'simulated dispatch plan' : asset.state}, ${asset.next}`}
                   onClick={() => openAssetModal(asset)}
                 >
                   <span><strong>{asset.name}</strong><small>{asset.id} · {asset.location}</small></span>
                   <span>{asset.estate}</span>
-                  <span><i data-state={asset.state.toLowerCase()} />{approved && asset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : asset.state}</span>
+                  <span><i data-state={asset.state.toLowerCase()} />{dispatched && asset.id === 'BLI-HVAC-04' ? 'Dispatch simulated' : approved && asset.id === 'BLI-HVAC-04' ? 'Approved' : asset.state}</span>
                   <span>{asset.next}<ChevronRight /></span>
                 </button>
               ))}
@@ -805,7 +1091,7 @@ export default function Home() {
                     <span><Check /></span>
                     <div>
                       <strong>Quote approved by Principal</strong>
-                      <small>Rp 8,300,000 · Bali Villa · 09:55 WITA · just now</small>
+                      <small>{selectedPrice} · Bali Villa · simulated decision · just now</small>
                     </div>
                   </li>
                 )}
@@ -840,48 +1126,55 @@ export default function Home() {
         <OverlayPanel
           open={overlay === 'quotes'}
           onClose={() => setOverlay(null)}
-          title={approved ? 'Dispatch plan' : quoteStep === 'confirm' ? 'Confirm accountable approval' : 'Compare verified vendors'}
-          description={approved ? 'The selected vendor has been notified and is en route.' : 'Choose on evidence, not urgency. Every decision becomes part of the audit trail.'}
+          title={dispatched ? 'Simulated dispatch recorded' : approved ? 'Approval recorded · dispatch checkpoint' : quoteStep === 'confirm' ? 'Confirm accountable approval' : 'Compare verified vendors'}
+          description={approved ? 'Prototype state only. Dispatch remains explicit, synthetic, and unable to contact an external vendor.' : 'Choose on evidence, not urgency. Every decision becomes part of the synthetic audit trail.'}
           wide
         >
           {approved ? (
             <div className="dispatch-panel">
-              <div className="dispatch-success"><CheckCircle2 /><div><strong>Bali Climate Works dispatched</strong><span>Arrival window 10:35–10:50 WITA</span></div></div>
+              <div className="dispatch-success"><CheckCircle2 /><div><strong>{effectiveSelectedVendor} · {dispatched ? 'simulated dispatch recorded' : 'human approval recorded'}</strong><span>{dispatched ? 'Illustrative arrival window only · no external action' : 'Server-enforced approval complete · no vendor contacted'}</span></div></div>
               <div className="dispatch-steps">
-                <div data-done><span><Check /></span><strong>Approval recorded</strong><small>09:55</small></div>
-                <div data-active><span><Wrench /></span><strong>Vendor en route</strong><small>ETA 10:42</small></div>
+                <div data-done><span><Check /></span><strong>Approval recorded</strong><small>Principal · synthetic event</small></div>
+                <div data-done={dispatched || undefined} data-active={!dispatched || undefined}><span><Wrench /></span><strong>{dispatched ? 'Dispatch simulated' : 'Dispatch checkpoint'}</strong><small>No vendor contacted</small></div>
                 <div><span><Camera /></span><strong>Completion evidence</strong><small>Pending</small></div>
                 <div><span><ShieldCheck /></span><strong>Manager sign-off</strong><small>Pending</small></div>
               </div>
-              <button className="primary-action full-action" onClick={() => { setOverlay(null); scrollTo('audit'); }}>View recorded decision <ChevronRight /></button>
+              {mutationError && <p className="mutation-error" role="alert">{mutationError}</p>}
+              {dispatched ? (
+                <button className="primary-action full-action" onClick={() => { setOverlay(null); scrollTo('audit'); }}>View recorded decision <ChevronRight /></button>
+              ) : (
+                <button className="primary-action full-action" onClick={dispatchWorkOrder} disabled={mutationState !== 'idle'}>
+                  {mutationState === 'dispatching' ? <><Loader2 className="spin" /> Recording simulated dispatch…</> : <><Wrench /> Record simulated dispatch</>}
+                </button>
+              )}
             </div>
           ) : quoteStep === 'compare' ? (
             <div className="quote-workspace">
               <div className="quote-summary">
                 <span className="priority-badge"><TriangleAlert /> High priority</span>
-                <h3>Master-suite HVAC containment</h3>
+                <h3>{incidentQuotes.incident?.summary ?? 'Master-suite HVAC containment'}</h3>
                 <p>Guest arrival in two days. Estate Manager approval limit: Rp 5,000,000.</p>
-                <div><span>Asset</span><strong>BLI-HVAC-04</strong></div>
+                <div><span>Asset</span><strong>{incidentQuotes.incident?.assetId ?? 'BLI-HVAC-04'}</strong></div>
                 <div><span>Required response</span><strong>Within 4 hours</strong></div>
-                <div><span>Warranty</span><strong>Parts covered</strong></div>
+                <div><span>Data source</span><strong>{incidentQuotes.status === 'ready' && incidentQuotes.quotes.length ? 'Synthetic API' : 'Local fallback'}</strong></div>
               </div>
               <fieldset className="quote-options">
                 <legend className="sr-only">Vendor quotations</legend>
-                <button className="quote-option" data-selected={selectedVendor === 'Bali Climate Works' || undefined} aria-pressed={selectedVendor === 'Bali Climate Works'} onClick={() => setSelectedVendor('Bali Climate Works')}>
-                  <div className="quote-option-head"><span><strong>Bali Climate Works</strong><small><BadgeCheck /> Verified · 4.9 · 38 jobs</small></span><span className="recommended-label"><Sparkles /> Recommended</span></div>
-                  <strong className="quote-price">Rp 8,300,000</strong>
-                  <div className="quote-grid"><span><small>Arrival</small><strong>10:35–10:50</strong></span><span><small>Warranty</small><strong>90 days</strong></span><span><small>Coverage</small><strong>Moisture control</strong></span></div>
-                  <p>Fastest containment and includes overnight dehumidifier.</p>
+                <button className="quote-option" data-selected={effectiveSelectedVendor === 'Bali Climate Works' || undefined} aria-pressed={effectiveSelectedVendor === 'Bali Climate Works'} onClick={() => setSelectedVendor('Bali Climate Works')}>
+                  <div className="quote-option-head"><span><strong>Bali Climate Works</strong><small><BadgeCheck /> Verified · {climateQuote?.vendorRating ?? '4.9'}</small></span><span className="recommended-label"><Sparkles /> Recommended</span></div>
+                  <strong className="quote-price">{formatIdr(climateQuote?.totalAmountMinorUnits ?? 18_500_000)}</strong>
+                  <div className="quote-grid"><span><small>Arrival</small><strong>{formatArrival(climateQuote?.estimatedArrivalTimestamp)}</strong></span><span><small>Warranty</small><strong>{climateQuote ? `${climateQuote.warrantyMonths} months` : '3 months'}</strong></span><span><small>Risk</small><strong>{climateQuote?.riskRating ?? 'LOW'}</strong></span></div>
+                  <p>{climateQuote?.aiRecommendationRationale ?? 'Fastest containment and includes overnight dehumidifier.'}</p>
                 </button>
-                <button className="quote-option" data-selected={selectedVendor === 'Island Estate Engineering' || undefined} aria-pressed={selectedVendor === 'Island Estate Engineering'} onClick={() => setSelectedVendor('Island Estate Engineering')}>
-                  <div className="quote-option-head"><span><strong>Island Estate Engineering</strong><small><BadgeCheck /> Verified · 4.7 · 24 jobs</small></span><span className="lowest-label">Lowest cost</span></div>
-                  <strong className="quote-price">Rp 6,850,000</strong>
-                  <div className="quote-grid"><span><small>Arrival</small><strong>14:00–15:00</strong></span><span><small>Warranty</small><strong>60 days</strong></span><span><small>Coverage</small><strong>Basic cleanup</strong></span></div>
-                  <p>Lower price, but later containment and no overnight moisture control.</p>
+                <button className="quote-option" data-selected={effectiveSelectedVendor === 'Island Estate Engineering' || undefined} aria-pressed={effectiveSelectedVendor === 'Island Estate Engineering'} onClick={() => setSelectedVendor('Island Estate Engineering')}>
+                  <div className="quote-option-head"><span><strong>Island Estate Engineering</strong><small><BadgeCheck /> Verified · {engineeringQuote?.vendorRating ?? '4.7'}</small></span><span className="lowest-label">Lowest cost</span></div>
+                  <strong className="quote-price">{formatIdr(engineeringQuote?.totalAmountMinorUnits ?? 14_200_000)}</strong>
+                  <div className="quote-grid"><span><small>Arrival</small><strong>{formatArrival(engineeringQuote?.estimatedArrivalTimestamp)}</strong></span><span><small>Warranty</small><strong>{engineeringQuote ? `${engineeringQuote.warrantyMonths} months` : '2 months'}</strong></span><span><small>Risk</small><strong>{engineeringQuote?.riskRating ?? 'MEDIUM'}</strong></span></div>
+                  <p>{engineeringQuote?.aiRecommendationRationale ?? 'Lower price, but later containment and no overnight moisture control.'}</p>
                 </button>
                 <div className="quote-actions">
                   <button className="secondary-action" onClick={() => { setOverlay(null); setToastMessage('Revision requested from both verified vendors.'); }}>Request revision</button>
-                  <button className="primary-action" onClick={() => { setApprovalAcknowledged(false); setQuoteStep('confirm'); }}>Approve {selectedPrice}<ChevronRight /></button>
+                  <button className="primary-action" onClick={() => { setApprovalAcknowledged(false); setMutationError(null); setQuoteStep('confirm'); }} disabled={!selectedQuote || incidentQuotes.status !== 'ready'}>Approve {selectedPrice}<ChevronRight /></button>
                 </div>
               </fieldset>
             </div>
@@ -889,16 +1182,17 @@ export default function Home() {
             <div className="confirm-approval">
               <div className="confirm-icon"><ShieldCheck /></div>
               <h3>Authorize {selectedPrice}?</h3>
-              <p>This exceeds the Estate Manager&apos;s Rp 5,000,000 limit. You are approving <strong>{selectedVendor}</strong> for Bali Villa.</p>
+              <p>This exceeds the Estate Manager&apos;s Rp 5,000,000 limit. You are approving <strong>{effectiveSelectedVendor}</strong> for Bali Villa.</p>
               <dl>
                 <div><dt>Property</dt><dd>Bali Villa · Master suite</dd></div>
                 <div><dt>Work order</dt><dd>WO-BLI-0829-027</dd></div>
                 <div><dt>Accountable role</dt><dd>Principal</dd></div>
               </dl>
               <label className="approval-check"><input type="checkbox" checked={approvalAcknowledged} onChange={(event) => setApprovalAcknowledged(event.target.checked)} /> I reviewed the quote, scope, arrival time, and warranty.</label>
+              {mutationError && <p className="mutation-error" role="alert">{mutationError}</p>}
               <div className="quote-actions">
                 <button className="secondary-action" onClick={() => setQuoteStep('compare')}>Back to comparison</button>
-                <button className="primary-action" onClick={approveQuote} disabled={!approvalAcknowledged} aria-disabled={!approvalAcknowledged}><Check /> Confirm approval</button>
+                <button className="primary-action" onClick={approveQuote} disabled={!approvalAcknowledged || mutationState !== 'idle'} aria-disabled={!approvalAcknowledged || mutationState !== 'idle'}>{mutationState === 'approving' ? <><Loader2 className="spin" /> Recording approval…</> : <><Check /> Confirm approval</>}</button>
               </div>
             </div>
           )}
@@ -934,7 +1228,7 @@ export default function Home() {
                   <span className="text-[10px] uppercase text-muted-foreground block mb-1">Status</span>
                   <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
                     <span className={`size-2 rounded-full ${selectedAsset.state === 'Healthy' ? 'bg-emerald-400' : selectedAsset.state === 'Scheduled' ? 'bg-indigo-400' : 'bg-amber-400'}`} />
-                    {approved && selectedAsset.id === 'BLI-HVAC-04' ? 'Vendor assigned' : selectedAsset.state}
+                    {approved && selectedAsset.id === 'BLI-HVAC-04' ? 'Dispatch simulated' : selectedAsset.state}
                   </span>
                 </div>
                 <div className="p-3.5 rounded-xl border border-white/8 bg-white/[0.02]">
@@ -1043,8 +1337,8 @@ export default function Home() {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/8">
-                <button className="secondary-action" onClick={() => { setOverlay(null); setToastMessage(`Direct dispatch channel opened for ${selectedVendorDetail.name}`); }}>Request SLA Quote</button>
-                <button className="primary-action" onClick={() => { setOverlay('quotes'); }}>View Live Quotes</button>
+                <button className="secondary-action" onClick={() => { setOverlay(null); setToastMessage(`Synthetic quote request prepared for ${selectedVendorDetail.name}. No message was sent.`); }}>Prepare quote request</button>
+                <button className="primary-action" onClick={() => { setOverlay('quotes'); }}>View demo quotes</button>
               </div>
             </div>
           )}
@@ -1149,7 +1443,7 @@ export default function Home() {
 
         <OverlayPanel open={overlay === 'notifications'} onClose={() => setOverlay(null)} title="Attention queue" description="Only changes that need a person are shown here.">
           <div className="notification-list">
-            <button onClick={openQuotes}><span className="notification-icon warning"><TriangleAlert /></span><span><strong>{approved ? 'Vendor dispatched' : 'Approval required · Rp 8,300,000'}</strong><small>Bali Villa · {approved ? 'arrival 10:35–10:50' : 'reported 18 minutes ago'}</small></span><ChevronRight /></button>
+            <button onClick={openQuotes}><span className="notification-icon warning"><TriangleAlert /></span><span><strong>{dispatched ? 'Simulated dispatch recorded' : approved ? 'Dispatch action available' : `Approval required · ${selectedPrice}`}</strong><small>Bali Villa · {approved ? 'no external vendor contacted' : 'reported 18 minutes ago'}</small></span><ChevronRight /></button>
             <button onClick={() => scrollTo('assets')}><span className="notification-icon"><CalendarClock /></span><span><strong>Generator fuel inspection</strong><small>Jakarta Residence · due 3 Sep</small></span><ChevronRight /></button>
           </div>
         </OverlayPanel>
@@ -1170,4 +1464,3 @@ export default function Home() {
     </main>
   );
 }
-

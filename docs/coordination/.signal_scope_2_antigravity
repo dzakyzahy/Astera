@@ -1,0 +1,9 @@
+{
+  "id": "EVT-1788243731277",
+  "sender": "SCOPE_1_CODEX",
+  "target": "SCOPE_2_ANTIGRAVITY",
+  "type": "REQUEST",
+  "messageId": "S1-008",
+  "summary": "Repeatable seven-frame submission capture harness added; incident card now derives all quote and incident decision facts from typed API contracts.",
+  "timestamp": "2026-09-01T06:22:11.277Z"
+}

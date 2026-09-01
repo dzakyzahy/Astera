@@ -24,7 +24,7 @@ The initial wedge is the professional estate manager responsible for two to ten 
 2. ASTERA structures the report, proposes severity, identifies the affected asset, and recommends containment steps.
 3. The estate manager compares normalized vendor quotes and selects a recommendation.
 4. The principal receives a concise approval request with amount, risk, and evidence.
-5. Approval dispatches the vendor and writes a timestamped audit event.
+5. After approval, an accountable user initiates a separate dispatch action; the contest build records only a synthetic dispatch and timestamped audit event.
 6. Resolution evidence closes the incident and enriches the asset history.
 
 ## Value proposition

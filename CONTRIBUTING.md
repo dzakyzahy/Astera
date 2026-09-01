@@ -14,7 +14,7 @@
 - Keep demo data synthetic and anonymous.
 - Never present AI output as an accountable approval.
 - Do not add fake certifications, integrations, testimonials, or security claims.
-- Keep the anime-inspired identity original, mature, and secondary to operational clarity.
+- Keep the Cloud + Sienna identity original, mature, and subordinate to operational clarity; do not introduce mascot or anime-style artwork.
 - Treat accessibility, privacy, auditability, and failure states as product requirements.
 
 ## Commit style
