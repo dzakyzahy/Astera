@@ -14,7 +14,7 @@ async function main() {
   console.log('1. Testing SHA-256 Audit Chain Integrity & Tamper Detection...');
   const audit = new AuditService();
 
-  const evt1 = await audit.recordEvent({
+  const evt1 = audit.recordEvent({
     aggregateType: 'ORGANIZATION',
     aggregateId: 'ORG-01',
     actorId: 'ACT-01',
@@ -24,7 +24,7 @@ async function main() {
     payload: { initialized: true },
   });
 
-  const evt2 = await audit.recordEvent({
+  const evt2 = audit.recordEvent({
     aggregateType: 'INCIDENT',
     aggregateId: 'INC-01',
     actorId: 'ACT-02',
@@ -38,7 +38,7 @@ async function main() {
   assert.equal(evt2.sequenceNumber, evt1.sequenceNumber + 1);
   assert.equal(evt2.previousHash, evt1.hash, 'Event 2 must chain to Event 1 hash');
 
-  const initialCheck = await audit.verifyChainIntegrity();
+  const initialCheck = audit.verifyChainIntegrity();
   assert.equal(initialCheck.valid, true, 'Clean chain must pass integrity check');
 
   console.log('✓ SHA-256 Cryptographic Audit Chain passed.');
@@ -111,14 +111,14 @@ async function main() {
   // ==========================================
   console.log('5. Testing Outbox Queue Service...');
   const outbox = new OutboxService();
-  await outbox.enqueue('vendor.dispatch', { woId: 'WO-01' });
-  const pendingMsgs = await outbox.getMessages('PENDING');
+  outbox.enqueue('vendor.dispatch', { woId: 'WO-01' });
+  const pendingMsgs = outbox.getMessages('PENDING');
   // It's possible other tests or seeding left pending messages, so we check for at least 1
   assert.ok(pendingMsgs.length >= 1);
 
   const outboxResult = await outbox.processQueue();
   assert.ok(outboxResult.processed >= 1);
-  const dispatchedMsgs = await outbox.getMessages('DISPATCHED');
+  const dispatchedMsgs = outbox.getMessages('DISPATCHED');
   assert.ok(dispatchedMsgs.length >= 1);
   console.log('✓ Transactional Outbox passed.');
 

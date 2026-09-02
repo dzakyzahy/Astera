@@ -1,13 +1,31 @@
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import type { NextAuthOptions } from "next-auth";
+import CredentialsProviderImport from "next-auth/providers/credentials";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { verifyPassword } from "./utils/password";
 
+const createCredentialsProvider = (options: Parameters<typeof CredentialsProviderImport>[0]) => {
+  const fn =
+    typeof CredentialsProviderImport === 'function'
+      ? CredentialsProviderImport
+      : (CredentialsProviderImport as unknown as { default?: typeof CredentialsProviderImport })?.default;
+  if (typeof fn === 'function') {
+    return fn(options);
+  }
+  return {
+    id: "credentials",
+    name: "Credentials",
+    type: "credentials" as const,
+    credentials: {},
+    authorize: options.authorize,
+    options,
+  };
+};
+
 export const authOptions: NextAuthOptions = {
   providers: [
-    CredentialsProvider({
+    createCredentialsProvider({
       name: 'Credentials',
       credentials: {
         username: { label: "Username", type: "text", placeholder: "principal" },

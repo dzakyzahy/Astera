@@ -568,18 +568,18 @@ export class AsteraDbStore {
 
   // --- AUDIT & VERIFICATION ---
 
-  public async getAuditEvents(options: {
+  public getAuditEvents(options: {
     aggregateType?: AuditAggregateType;
     aggregateId?: string;
     actorId?: string;
     limit?: number;
     cursor?: string;
     estateId?: string;
-  }): Promise<{ events: AuditEvent[]; total: number; nextCursor?: string }> {
+  }): { events: AuditEvent[]; total: number; nextCursor?: string } {
     return this.auditService.getEvents(options);
   }
 
-  public async verifyAuditChain(): Promise<AuditVerificationResult> {
+  public verifyAuditChain(): AuditVerificationResult {
     return this.auditService.verifyChainIntegrity();
   }
 

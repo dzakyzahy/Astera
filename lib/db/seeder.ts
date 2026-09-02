@@ -18,7 +18,7 @@ export async function runDatabaseSeed() {
   // Mock AuditService so AsteraDbStore doesn't try to concurrently insert audit events during instantiation
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalRecordEvent = AuditService.prototype.recordEvent;
-  AuditService.prototype.recordEvent = async () => ({} as unknown as AuditEvent);
+  AuditService.prototype.recordEvent = () => ({} as unknown as AuditEvent);
 
   try {
     const store = new AsteraDbStore();
