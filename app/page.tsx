@@ -5,6 +5,7 @@ import { usePortfolioOverview } from '@/hooks/use-portfolio-overview';
 import { useIncidentQuotes } from '@/hooks/use-incident-quotes';
 import { useOperationsData } from '@/hooks/use-operations-data';
 import { AsteraApiClient, AsteraApiError } from '@/lib/adapters/client-api';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Asset, AuditEvent, Vendor } from '@/types/domain';
 import {
   Activity,
@@ -465,6 +466,7 @@ function OverlayPanel({
 }
 
 export default function Home() {
+  const { language, setLanguage, t } = useLanguage();
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [estateMenuOpen, setEstateMenuOpen] = useState(false);
   const [selectedEstate, setSelectedEstate] = useState<string>(ALL_ESTATES);
@@ -582,25 +584,25 @@ export default function Home() {
 
   const dashboardMetrics = [
     {
-      label: 'Open incidents',
+      label: t.kpi.openIncidents,
       value: formatMetricCount(openIncidentCount),
       detail: openIncidentCount === 0 ? 'No active issues' : approved ? '1 dispatch plan simulated' : '1 high priority',
       tone: openIncidentCount === 0 ? 'emerald' : 'amber',
     },
     {
-      label: 'SLA at risk',
+      label: t.kpi.slaAtRisk,
       value: formatMetricCount(portfolioOverview.kpis?.slaAtRiskCount ?? 0),
       detail: 'All within target',
       tone: 'emerald',
     },
     {
-      label: 'Pending approvals',
+      label: t.kpi.pendingApprovals,
       value: formatMetricCount(pendingApprovalCount),
       detail: pendingApprovalCount === 0 ? 'Nothing waiting' : `${recommendedPriceCompact} awaiting`,
       tone: 'violet',
     },
     {
-      label: approved ? 'Value protected' : 'Cost avoidance',
+      label: approved ? 'Value protected' : t.kpi.costAvoidance,
       value: formatIdrCompact(costAvoidance),
       detail: approved ? 'Simulated estimate' : 'Potential · demo estimate',
       tone: 'gold',
@@ -849,6 +851,9 @@ export default function Home() {
 
           <div className="flex items-center justify-end gap-2">
             <div className="private-status hidden lg:flex"><ShieldCheck className="size-3.5" />Private workspace</div>
+            <button className="topbar-icon" onClick={() => setLanguage(language === 'en' ? 'id' : 'en')} aria-label={t.common.language} title={t.common.language}>
+              <span className="text-xs font-semibold">{language === 'en' ? 'EN' : 'ID'}</span>
+            </button>
             <button className="topbar-icon icon-action" aria-label="Search (Ctrl+K)" title="Quick Search (Ctrl+K)" onClick={() => setOverlay('search')}>
               <Search />
             </button>
@@ -861,11 +866,15 @@ export default function Home() {
 
         <aside className="side-rail" aria-label="Primary navigation">
           <nav className="flex flex-col gap-2">
-            {navigation.map(({ label, icon: Icon, active, href }) => (
-              <a key={label} href={href} className="rail-link" data-active={active || undefined} aria-label={label}>
-                <Icon /><span>{label}</span>
-              </a>
-            ))}
+            {navigation.map(({ label, icon: Icon, active, href }) => {
+              const navKey = href.replace('#', '') as keyof typeof t.nav;
+              const displayLabel = t.nav[navKey] || label;
+              return (
+                <a key={label} href={href} className="rail-link" data-active={active || undefined} aria-label={displayLabel}>
+                  <Icon /><span>{displayLabel}</span>
+                </a>
+              );
+            })}
           </nav>
           <button className="rail-link mt-auto" aria-label="Privacy controls" onClick={() => setOverlay('privacy')}>
             <Fingerprint /><span>Privacy</span>
@@ -884,20 +893,20 @@ export default function Home() {
               <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                 <CircleGauge className="size-3.5 text-primary" />Operations overview<span aria-hidden="true">·</span>31 Aug 2026, 13:07 WIB
               </div>
-              <h1>Good afternoon, Principal.</h1>
+              <h1>{t.workspace.greeting}</h1>
               <p>
                 {jakartaOnly ? (
-                  <><span className="text-emerald-300">All clear.</span> Jakarta Residence is operating normally.</>
+                  <><span className="text-emerald-300">{t.workspace.allClear}</span> {t.workspace.jakartaNormal}</>
                 ) : baliOnly ? (
-                  <><span className="text-amber-300">{extraIncident ? 'Two active issues' : 'One active issue'}</span> in Bali Villa requires your decision.</>
+                  <><span className="text-amber-300">{extraIncident ? t.workspace.activeIssuesTwo : t.workspace.activeIssuesOne}</span> {t.workspace.requiresDecision}</>
                 ) : (
-                  <><span className="text-amber-300">{extraIncident ? 'Two issues' : 'One issue'}</span> need{extraIncident ? '' : 's'} your attention across two estates.</>
+                  <><span className="text-amber-300">{extraIncident ? t.workspace.activeIssuesTwo : t.workspace.activeIssuesOne}</span> {extraIncident ? t.workspace.needAttention : t.workspace.needsAttention}</>
                 )}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="secondary-action hidden sm:inline-flex" onClick={resetDemo} disabled={mutationState !== 'idle'}><RotateCcw className={mutationState === 'resetting' ? 'spin' : undefined} />{mutationState === 'resetting' ? 'Resetting…' : 'Reset demo'}</button>
-              <button className="primary-action" onClick={() => setOverlay('report')}><Plus />Report incident</button>
+              <button className="secondary-action hidden sm:inline-flex" onClick={resetDemo} disabled={mutationState !== 'idle'}><RotateCcw className={mutationState === 'resetting' ? 'spin' : undefined} />{mutationState === 'resetting' ? 'Resetting…' : t.common.resetDemo}</button>
+              <button className="primary-action" onClick={() => setOverlay('report')}><Plus />{t.common.reportIncident}</button>
             </div>
           </div>
 
@@ -905,8 +914,8 @@ export default function Home() {
             <section className="estate-card" aria-labelledby="estate-pulse-title">
               <div className="card-heading">
                 <div>
-                  <div className="eyebrow"><MapPin className="size-3.5" />Live estate pulse</div>
-                  <h2 id="estate-pulse-title">Your private world, clearly organized.</h2>
+                  <div className="eyebrow"><MapPin className="size-3.5" />{t.pulse.title}</div>
+                  <h2 id="estate-pulse-title">{t.pulse.subtitle}</h2>
                 </div>
                 <span className="healthy-badge">
                   <span className="size-1.5 rounded-full bg-emerald-400" />
@@ -944,13 +953,13 @@ export default function Home() {
 
                 <div className="workflow-hub" aria-label="ASTERA is monitoring the human-authorized estate workflow">
                   <span className="workflow-hub-icon"><ClipboardCheck /></span>
-                  <div><strong>Human-authorized operations</strong><small>8 critical assets · synthetic workspace</small></div>
+                  <div><strong>{t.pulse.humanAuthorized}</strong><small>8 {t.pulse.syntheticWorkspace}</small></div>
                 </div>
 
                 <div className="map-caption">
-                  <span><span className="legend-dot bg-emerald-400" />Stable</span>
-                  <span><span className="legend-dot bg-amber-300" />Attention</span>
-                  <span className="ml-auto text-muted-foreground">Updated just now</span>
+                  <span><span className="legend-dot bg-emerald-400" />{t.pulse.stable}</span>
+                  <span><span className="legend-dot bg-amber-300" />{t.pulse.attention}</span>
+                  <span className="ml-auto text-muted-foreground">{t.pulse.updatedJustNow}</span>
                 </div>
               </figure>
             </section>
