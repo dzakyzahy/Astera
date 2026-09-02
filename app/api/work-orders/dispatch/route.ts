@@ -4,8 +4,7 @@ import { apiError, apiSuccess, handleRouteError, AsteraApiError } from '@/lib/ap
 import { db } from '@/lib/db';
 import { incidents, workOrders, outboxEvents, estates } from '@/lib/db/schema';
 import { dispatchWorkOrderInputSchema } from '@/lib/validations/work-order.schema';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 import { eq } from 'drizzle-orm';
 import { AuditService } from '@/lib/services/audit-service';
 import { IdempotencyService, IdempotencyConflictError } from '@/lib/services/idempotency-service';
@@ -16,7 +15,7 @@ if (process.env.NODE_ENV !== 'production') globalForIdempotency.idempotencyServi
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     if (!session || !session.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
     const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
     const json = await request.json();

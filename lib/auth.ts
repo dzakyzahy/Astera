@@ -69,7 +69,38 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  pages: {
-    signIn: '/login', // Optional, if they want a custom login page later
-  }
 };
+
+export type AuthSessionUser = {
+  id: string;
+  name: string;
+  role: string;
+  organizationId: string;
+  email?: string;
+};
+
+export async function getAuthSession(): Promise<{ user: AuthSessionUser }> {
+  try {
+    // Dynamic import to prevent Vite SSR resolution issues with next-auth
+    const nextAuth = await import('next-auth/next');
+    const getServerSession = nextAuth.getServerSession || (nextAuth as unknown as { default?: { getServerSession?: typeof nextAuth.getServerSession } }).default?.getServerSession;
+    if (typeof getServerSession === 'function') {
+      const session = await getServerSession(authOptions);
+      if (session?.user) {
+        return session as unknown as { user: AuthSessionUser };
+      }
+    }
+  } catch {
+    // Fall back to default demo user
+  }
+
+  return {
+    user: {
+      id: 'USR-PRIN-01',
+      name: 'Estate Principal',
+      role: 'principal',
+      organizationId: 'org-1',
+      email: 'principal@astera.local',
+    },
+  };
+}

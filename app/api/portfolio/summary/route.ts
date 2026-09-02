@@ -2,13 +2,12 @@ import { type NextRequest } from 'next/server';
 import { apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { db } from '@/lib/db';
 import { estates, incidents, assets, workOrders, quotes } from '@/lib/db/schema';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 import { eq, inArray, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     if (!session?.user) {
       throw new AsteraApiError(401, 'Unauthorized', 'You must be logged in.');
     }

@@ -2,8 +2,7 @@ import { type NextRequest } from 'next/server';
 import { apiError, apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { db } from '@/lib/db';
 import { incidents, quotes, estates } from '@/lib/db/schema';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -11,7 +10,7 @@ export async function GET(
   props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
     const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 

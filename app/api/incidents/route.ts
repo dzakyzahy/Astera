@@ -4,15 +4,14 @@ import { db } from '@/lib/db';
 import { incidents, estates, assets } from '@/lib/db/schema';
 import { createIncidentInputSchema } from '@/lib/validations/incident.schema';
 import type { IncidentStatus, IncidentSeverity, UserRole } from '@/types/domain';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 import { eq, and, inArray, desc } from 'drizzle-orm';
 import { AiOrchestrationService } from '@/lib/services/ai-orchestration-service';
 import { AuditService } from '@/lib/services/audit-service';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
     const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
@@ -42,7 +41,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
     const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 

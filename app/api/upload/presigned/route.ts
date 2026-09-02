@@ -1,12 +1,11 @@
 import { type NextRequest } from 'next/server';
 import { apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { generateUploadUrl } from '@/lib/supabase-storage';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     if (!session || !session.user) {
       throw new AsteraApiError(401, 'Unauthorized', 'You must be logged in to upload evidence.');
     }
