@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import type { IncidentStatus, IncidentSeverity, UserRole } from '@/types/domain';
+import { type NextRequest } from 'next/server';
+import type { UserRole, WorkOrder } from '@/types/domain';
 import { apiError, apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { db } from '@/lib/db';
 import { incidents, workOrders, outboxEvents, estates } from '@/lib/db/schema';
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const result = await idempotencyService.executeWithLock(
       validated.idempotencyKey,
       'DISPATCH_WORK_ORDER',
-      async (): Promise<{ statusCode: number; body: any }> => {
+      async (): Promise<{ statusCode: number; body: { success: boolean; workOrder: WorkOrder } }> => {
         return await db.transaction(async (tx) => {
           const woResult = await tx.select().from(workOrders).where(eq(workOrders.id, validated.workOrderId)).limit(1);
           if (woResult.length === 0) throw new Error(`Work Order ${validated.workOrderId} not found`);
@@ -40,7 +40,14 @@ export async function POST(request: NextRequest) {
           if (wo.status === 'DISPATCHED') {
             return {
               statusCode: 200,
-              body: { success: true, workOrder: wo },
+              body: {
+                success: true,
+                workOrder: {
+                  ...wo,
+                  scheduledArrival: wo.scheduledArrival.toISOString(),
+                  dispatchedAt: wo.dispatchedAt?.toISOString(),
+                } as unknown as WorkOrder,
+              },
             };
           }
 
@@ -81,7 +88,11 @@ export async function POST(request: NextRequest) {
             statusCode: 200,
             body: {
               success: true,
-              workOrder: { ...updatedWo[0], scheduledArrival: updatedWo[0].scheduledArrival.toISOString(), dispatchedAt: updatedWo[0].dispatchedAt?.toISOString() },
+              workOrder: {
+                ...updatedWo[0],
+                scheduledArrival: updatedWo[0].scheduledArrival.toISOString(),
+                dispatchedAt: updatedWo[0].dispatchedAt?.toISOString(),
+              } as unknown as WorkOrder,
             },
           };
         });

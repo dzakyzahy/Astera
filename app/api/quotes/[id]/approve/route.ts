@@ -1,11 +1,12 @@
 import { type NextRequest } from 'next/server';
+import type { UserRole } from '@/types/domain';
 import { apiError, apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { db } from '@/lib/db';
 import { incidents, quotes, approvals, workOrders, estates } from '@/lib/db/schema';
 import { approveQuoteInputSchema } from '@/lib/validations/approval.schema';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { AuditService } from '@/lib/services/audit-service';
 import { IdempotencyService, IdempotencyConflictError } from '@/lib/services/idempotency-service';
 import { PolicyEngine } from '@/lib/services/policy-engine';
@@ -140,7 +141,7 @@ export async function POST(
         aggregateId: result.body.approval.id,
         actorId,
         actorName,
-        actorRole,
+        actorRole: actorRole as UserRole,
         action: 'SPENDING_AUTHORIZED_AND_LOCKED',
         payload: {
           approvalId: result.body.approval.id,
