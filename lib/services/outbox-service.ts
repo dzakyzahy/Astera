@@ -1,63 +1,107 @@
+import { db } from '../db';
+import { outboxEvents } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
 export interface OutboxMessage {
   id: string;
   topic: string;
   payload: Record<string, unknown>;
   attempts: number;
   maxAttempts: number;
-  status: 'PENDING' | 'DISPATCHED' | 'FAILED';
+  status: 'PENDING' | 'DISPATCHED' | 'FAILED' | 'PROCESSING' | 'COMPLETED';
   createdAt: string;
   lastAttemptAt?: string;
   errorMessage?: string;
 }
 
 export class OutboxService {
-  private queue: OutboxMessage[] = [];
+  public async enqueue(topic: string, payload: Record<string, unknown>): Promise<OutboxMessage> {
+    const id = `OBX-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const now = new Date();
+    
+    await db.insert(outboxEvents).values({
+      id,
+      eventType: topic,
+      payload,
+      status: 'PENDING',
+      attempts: 0,
+      createdAt: now,
+    });
 
-  public enqueue(topic: string, payload: Record<string, unknown>): OutboxMessage {
-    const msg: OutboxMessage = {
-      id: `OUT-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    return {
+      id,
       topic,
       payload,
       attempts: 0,
       maxAttempts: 3,
       status: 'PENDING',
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
     };
-    this.queue.push(msg);
-    return msg;
   }
 
   public async processQueue(): Promise<{ processed: number; failed: number }> {
     let processed = 0;
     let failed = 0;
 
-    for (const msg of this.queue) {
-      if (msg.status === 'DISPATCHED') continue;
+    // Get pending messages (simple lock by immediately updating status to PROCESSING in real app, here we just select and process)
+    const pendingEvents = await db.select()
+      .from(outboxEvents)
+      .where(eq(outboxEvents.status, 'PENDING'))
+      .limit(50);
 
-      msg.attempts += 1;
-      msg.lastAttemptAt = new Date().toISOString();
+    for (const msg of pendingEvents) {
+      const attempts = msg.attempts + 1;
+      const now = new Date();
+      let newStatus = 'COMPLETED';
+      let errorMsg = null;
 
       try {
         // Simulated deterministic dispatch delivery
-        msg.status = 'DISPATCHED';
+        // In real life: await fetch(webhookUrl)
         processed += 1;
       } catch (err: unknown) {
         const error = err as Error;
-        msg.errorMessage = error.message;
-        if (msg.attempts >= msg.maxAttempts) {
-          msg.status = 'FAILED';
+        errorMsg = error.message;
+        if (attempts >= 3) {
+          newStatus = 'FAILED';
           failed += 1;
+        } else {
+          // Keep it pending for retry
+          newStatus = 'PENDING';
         }
       }
+
+      await db.update(outboxEvents).set({
+        status: newStatus,
+        attempts,
+        processedAt: newStatus === 'COMPLETED' ? now : null,
+        lastError: errorMsg,
+      }).where(eq(outboxEvents.id, msg.id));
     }
 
     return { processed, failed };
   }
 
-  public getMessages(status?: 'PENDING' | 'DISPATCHED' | 'FAILED'): OutboxMessage[] {
+  public async getMessages(status?: 'PENDING' | 'DISPATCHED' | 'FAILED' | 'COMPLETED' | 'PROCESSING'): Promise<OutboxMessage[]> {
+    let query = db.select().from(outboxEvents);
     if (status) {
-      return this.queue.filter((m) => m.status === status);
+      // Map 'DISPATCHED' to 'COMPLETED' for backward compatibility with old tests if needed
+      const mappedStatus = status === 'DISPATCHED' ? 'COMPLETED' : status;
+      query = query.where(eq(outboxEvents.status, mappedStatus)) as unknown as typeof query;
     }
-    return [...this.queue];
+    
+    const events = await query.orderBy(outboxEvents.createdAt);
+    
+    return events.map(e => ({
+      id: e.id,
+      topic: e.eventType,
+      payload: e.payload as Record<string, unknown>,
+      attempts: e.attempts,
+      maxAttempts: 3,
+      status: (e.status === 'COMPLETED' ? 'DISPATCHED' : e.status) as 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED',
+      createdAt: e.createdAt.toISOString(),
+      lastAttemptAt: e.processedAt?.toISOString(),
+      errorMessage: e.lastError || undefined,
+    }));
   }
 }
