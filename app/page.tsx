@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Image from 'next/image';
+import { Preloader } from '@/components/Preloader';
 import { usePortfolioOverview } from '@/hooks/use-portfolio-overview';
 import { useIncidentQuotes } from '@/hooks/use-incident-quotes';
 import { useOperationsData } from '@/hooks/use-operations-data';
@@ -806,13 +808,22 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      <Preloader />
       <div className="app-shell">
         <header className="topbar">
           <div className="flex min-w-0 items-center gap-3">
             <button className="mobile-menu" aria-label="Open navigation" onClick={() => setOverlay('menu')}>
               <Menu className="size-5" />
             </button>
-            <div className="brand-mark" aria-hidden="true"><span /></div>
+            <div className="brand-mark-img-wrap" aria-hidden="true">
+              <Image
+                src="/assets/logo-star.png"
+                alt="ASTERA Logo"
+                width={32}
+                height={32}
+                className="brand-star-icon"
+              />
+            </div>
             <div className="min-w-0">
               <p className="brand-wordmark">ASTERA</p>
               <p className="brand-subtitle">Private estate operations</p>
@@ -1467,6 +1478,15 @@ export default function Home() {
         </OverlayPanel>
 
         <OverlayPanel open={overlay === 'menu'} onClose={() => setOverlay(null)} title="Navigate ASTERA">
+          <div className="flex items-center justify-center p-3 mb-2 border-b border-border/50">
+            <Image
+              src="/assets/logo-full.png"
+              alt="ASTERA Logo"
+              width={130}
+              height={44}
+              className="object-contain"
+            />
+          </div>
           <nav className="mobile-nav-list">{navigation.map(({ label, icon: Icon, href }) => <button key={label} onClick={() => scrollTo(href.slice(1))}><Icon />{label}<ChevronRight /></button>)}</nav>
         </OverlayPanel>
       </div>

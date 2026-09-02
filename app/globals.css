@@ -3095,3 +3095,374 @@ button.asset-row:hover {
 .standalone-state > p:not(.eyebrow) {
   color: var(--text-tertiary);
 }
+
+/* ==========================================================================
+   ASTERA BRAND LOGO & STAR ICON COMPONENT
+   ========================================================================== */
+
+.brand-mark-img-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 240ms ease,
+              box-shadow 240ms ease;
+}
+
+.brand-mark-img-wrap:hover {
+  transform: rotate(18deg) scale(1.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(146, 64, 14, 0.18);
+}
+
+.brand-star-icon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  transition: transform 300ms ease;
+}
+
+/* ==========================================================================
+   ASTERA PRELOADER & RPM STAR ACCELERATION ENGINE
+   ========================================================================== */
+
+.preloader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #faf9f6;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 550ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 550ms cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 550ms ease;
+  will-change: opacity, transform;
+}
+
+.preloader-dismissing {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: scale(1.025);
+  pointer-events: none;
+}
+
+.preloader-backdrop-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(146, 64, 14, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 20%, rgba(180, 83, 9, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 20% 80%, rgba(217, 119, 6, 0.03) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+.preloader-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  pointer-events: none;
+}
+
+.preloader-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 440px;
+  width: 90%;
+  padding: 24px;
+}
+
+/* Star Container & Concentric Instruments */
+.preloader-star-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 170px;
+  height: 170px;
+  margin-bottom: 28px;
+}
+
+.preloader-orbit-ring {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 9999px;
+  border: 1px dashed rgba(146, 64, 14, 0.28);
+  animation: orbitRingCounter 16s linear infinite;
+}
+
+.preloader-orbit-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.preloader-orbit-ticks .tick {
+  position: absolute;
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+.tick-n {
+  top: -3px;
+  left: 50%;
+  width: 1px;
+  height: 8px;
+  transform: translateX(-50%);
+}
+
+.tick-s {
+  bottom: -3px;
+  left: 50%;
+  width: 1px;
+  height: 8px;
+  transform: translateX(-50%);
+}
+
+.tick-w {
+  top: 50%;
+  left: -3px;
+  width: 8px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.tick-e {
+  top: 50%;
+  right: -3px;
+  width: 8px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+/* Dynamic Variable RPM Rotation */
+.preloader-star-rpm-wrapper {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  animation: starRpmCycle 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, filter;
+}
+
+.preloader-star-img {
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(146, 64, 14, 0.25));
+}
+
+.preloader-star-glow {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(146, 64, 14, 0.22) 0%, rgba(217, 119, 6, 0.08) 45%, transparent 70%);
+  animation: auraPulse 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Brand Section */
+.preloader-brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.preloader-logo-full-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.preloader-logo-full-img {
+  width: 148px;
+  height: auto;
+  object-fit: contain;
+}
+
+.preloader-brand-subtitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: #78716c;
+  text-transform: uppercase;
+}
+
+/* Telemetry & Progress Track */
+.preloader-status-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 280px;
+}
+
+.preloader-progress-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.preloader-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #b45309, #d97706);
+  border-radius: 9999px;
+  transition: width 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px rgba(180, 83, 9, 0.4);
+}
+
+.preloader-telemetry-readout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 10.5px;
+  font-family: var(--font-mono, monospace);
+  color: #57534e;
+  letter-spacing: 0.08em;
+}
+
+.preloader-pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #15803d;
+  margin-right: 8px;
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+.preloader-telemetry-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preloader-telemetry-percentage {
+  font-weight: 600;
+  color: var(--accent);
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================== */
+
+/* Variable RPM: Low -> Spool-up -> High RPM Spin Burst -> Decelerate -> Low Glide -> High Burst -> Loop */
+@keyframes starRpmCycle {
+  0% {
+    transform: rotate(0deg) scale(0.96);
+    filter: drop-shadow(0 4px 12px rgba(146, 64, 14, 0.2));
+  }
+  /* Spooling up */
+  14% {
+    transform: rotate(140deg) scale(0.98);
+    filter: drop-shadow(0 4px 16px rgba(146, 64, 14, 0.28));
+  }
+  /* High Torque Acceleration -> High RPM Burst */
+  34% {
+    transform: rotate(880deg) scale(1.08);
+    filter: drop-shadow(0 8px 36px rgba(146, 64, 14, 0.6)) brightness(1.14);
+  }
+  /* Peak Speed Glide */
+  48% {
+    transform: rotate(1440deg) scale(1.05);
+    filter: drop-shadow(0 6px 30px rgba(146, 64, 14, 0.48));
+  }
+  /* Smooth glide down to low RPM */
+  64% {
+    transform: rotate(1620deg) scale(0.96);
+    filter: drop-shadow(0 4px 12px rgba(146, 64, 14, 0.22));
+  }
+  /* Idle slow cruising */
+  74% {
+    transform: rotate(1740deg) scale(0.98);
+    filter: drop-shadow(0 4px 15px rgba(146, 64, 14, 0.26));
+  }
+  /* Second Fast RPM Surge */
+  88% {
+    transform: rotate(2580deg) scale(1.07);
+    filter: drop-shadow(0 8px 34px rgba(146, 64, 14, 0.55)) brightness(1.1);
+  }
+  /* Seamless settle into loop (2880deg = 8 x 360deg) */
+  100% {
+    transform: rotate(2880deg) scale(0.96);
+    filter: drop-shadow(0 4px 12px rgba(146, 64, 14, 0.2));
+  }
+}
+
+@keyframes orbitRingCounter {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes auraPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  34%, 88% {
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+  64% {
+    transform: scale(0.95);
+    opacity: 0.45;
+  }
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+/* Reduced Motion Safety */
+@media (prefers-reduced-motion: reduce) {
+  .preloader-star-rpm-wrapper {
+    animation: auraPulse 3s ease-in-out infinite !important;
+  }
+  .preloader-orbit-ring {
+    animation: none !important;
+  }
+}
