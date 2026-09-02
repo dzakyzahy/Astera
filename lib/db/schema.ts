@@ -196,3 +196,12 @@ export const outboxEvents = pgTable('outbox_events', {
   processedAt: timestamp('processed_at'),
   lastError: text('last_error'),
 });
+
+// --- POLICY SETTINGS ---
+export const policySettings = pgTable('policy_settings', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  organizationId: varchar('organization_id', { length: 255 }).notNull().references(() => organizations.id),
+  approvalThresholdMinorUnits: integer('approval_threshold_minor_units').notNull().default(10000000), // Default 10M IDR
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});

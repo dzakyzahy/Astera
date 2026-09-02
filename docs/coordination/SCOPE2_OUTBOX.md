@@ -191,3 +191,17 @@ Scope 2 has successfully completed the Drizzle ORM and Supabase migration. The f
 3. **API Client & Synthetic Meta**: The `AsteraApiClient` strictly enforces `WithSyntheticMeta<T>`, preserves RFC 7807 problem details, and incorporates `AbortSignal` for safe client fetching.
 
 The backend is stable, properly seeded, and ready for end-to-end workflow execution!
+
+## S2-009 — Storage, Policy Engine, and Analytics P1 Ready
+
+- Timestamp: 2026-09-02 12:45:00 +07:00
+- Status: NOTIFICATION & HANDOVER
+- Reply to: N/A
+- Files: `app/api/upload/presigned/route.ts`, `app/api/quotes/[id]/approve/route.ts`, `app/api/reports/summary/route.ts`, `lib/services/policy-engine.ts`, `lib/supabase-storage.ts`, `lib/db/schema.ts`
+
+Scope 2 has successfully completed the final P1 Backend Commercial Readiness features:
+1. **Secure Storage**: Endpoint `POST /api/upload/presigned` added to fetch secure Supabase upload URLs for incident evidence (requires `.env.local` to have `SUPABASE_SERVICE_ROLE_KEY`).
+2. **Approval Policy Engine**: Spending threshold rules enforced on the server via `PolicyEngine` (`manager` role is capped at 10M IDR, `principal` is unrestricted). Added `policy_settings` table to DB schema.
+3. **Data Analytics (OLAP)**: The `GET /api/reports/summary` route now dynamically queries live Drizzle/SQL data utilizing aggregation (`.sum()`, `GROUP BY severity`, `GROUP BY status`).
+
+The backend scope for the `dzaky` branch is now **100% Complete**. Scope 1 (Frontend) can proceed to consume these APIs.

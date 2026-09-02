@@ -8,6 +8,7 @@ import { authOptions } from '@/lib/auth';
 import { eq, and } from 'drizzle-orm';
 import { AuditService } from '@/lib/services/audit-service';
 import { IdempotencyService, IdempotencyConflictError } from '@/lib/services/idempotency-service';
+import { PolicyEngine } from '@/lib/services/policy-engine';
 
 // Global singleton for Next.js dev server persistence
 const globalForIdempotency = globalThis as unknown as { idempotencyService: IdempotencyService };
@@ -23,9 +24,7 @@ export async function POST(
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
     const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
-    if (actorRole !== 'principal') {
-      throw new AsteraApiError(403, 'Forbidden', 'Only principals can approve quotes.');
-    }
+    // Role and amount authorization will be handled by the PolicyEngine once the quote is fetched.
 
     const params = await Promise.resolve(props.params);
     const quoteId = params.id;
@@ -48,6 +47,10 @@ export async function POST(
           if (quote.incidentId !== validated.incidentId) {
              throw new Error(`Quote ${quoteId} does not belong to incident ${validated.incidentId}`);
           }
+
+          // Evaluate Approval Policy (Threshold logic)
+          const policyEngine = new PolicyEngine();
+          await policyEngine.evaluateApprovalPolicy(organizationId, actorRole, quote.totalAmountMinorUnits);
 
           const incidentResult = await tx.select().from(incidents).where(eq(incidents.id, validated.incidentId)).limit(1);
           if (incidentResult.length === 0) throw new Error(`Incident ${validated.incidentId} not found`);

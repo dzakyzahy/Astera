@@ -15,6 +15,13 @@
       "when": 1788283309449,
       "tag": "0001_sad_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788326397861,
+      "tag": "0002_zippy_wolfsbane",
+      "breakpoints": true
     }
   ]
 }
