@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { AuditAggregateType, AuditEvent, AuditVerificationResult, UserRole } from '../../types/domain';
 import { db } from '@/lib/db';
 import { auditEvents } from '@/lib/db/schema';
-import { desc, eq, and } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 export function calculateSha256(content: string): string {
   return createHash('sha256').update(content, 'utf8').digest('hex');

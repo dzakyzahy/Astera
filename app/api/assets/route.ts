@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     const { searchParams } = new URL(request.url);
     const estateId = searchParams.get('estateId') || undefined;

@@ -4,14 +4,14 @@ import { db } from '@/lib/db';
 import { incidents, assets, vendors, estates } from '@/lib/db/schema';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { eq, or, ilike, inArray } from 'drizzle-orm';
+import { eq, or, ilike } from 'drizzle-orm';
 import type { GlobalSearchResult } from '@/types/domain';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim() || '';
@@ -78,16 +78,17 @@ export async function GET(request: NextRequest) {
       .where(
         or(
           ilike(vendors.name, q),
-          ilike(vendors.specialty, q)
+          ilike(vendors.category, q)
         )
-      );
+      )
+      .limit(10);
 
     for (const v of vends) {
       searchResults.push({
         type: 'vendor',
         id: v.id,
         title: v.name,
-        subtitle: v.specialty,
+        subtitle: v.category,
         statusBadge: v.rating.toString(),
         url: `#vendors`,
       });

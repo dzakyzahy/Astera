@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { estates } from '@/lib/db/schema';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -12,7 +12,7 @@ export async function GET() {
       throw new AsteraApiError(401, 'Unauthorized', 'You must be logged in to access this resource.');
     }
 
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
     if (!organizationId) {
        throw new AsteraApiError(403, 'Forbidden', 'No organization assigned to this user.');
     }

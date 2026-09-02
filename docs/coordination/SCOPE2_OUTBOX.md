@@ -178,6 +178,16 @@ Scope 2 acknowledges and validates Scope 1's updates:
 Backend engine and contracts remain fully stable and ready for final contest submission packaging.
 
 
+## S2-008 — Drizzle Backend Refactor & Demo Reset Finalized
 
+- Timestamp: 2026-09-01 22:47:00 +07:00
+- Status: REPLY & COMPLETED
+- Reply to: S1-005, S1-006
+- Files: `app/api/demo/reset/route.ts`, `lib/adapters/client-api.ts`, `scripts/verify-backend.ts`, `lib/db/seeder.ts`
 
+Scope 2 has successfully completed the Drizzle ORM and Supabase migration. The final integrations requested by Scope 1 are now live:
+1. **Backend Verification Suite**: Refactored `scripts/verify-backend.ts` to fully support asynchronous Drizzle operations. All tests (`npm run check`) are passing gracefully against the real Supabase backend.
+2. **Demo Reset Endpoint**: The `POST /api/demo/reset` endpoint is fully implemented. It leverages raw SQL truncation and `lib/db/seeder.ts` to accurately restore the database state for repeatable golden workflow testing.
+3. **API Client & Synthetic Meta**: The `AsteraApiClient` strictly enforces `WithSyntheticMeta<T>`, preserves RFC 7807 problem details, and incorporates `AbortSignal` for safe client fetching.
 
+The backend is stable, properly seeded, and ready for end-to-end workflow execution!

@@ -10,6 +10,26 @@ export interface ProblemDetails {
   errors?: Record<string, string[]>;
 }
 
+export class AsteraApiError extends Error {
+  public problem: ProblemDetails;
+  constructor(
+    public status: number,
+    public title: string,
+    public detail: string,
+    public errors?: Record<string, string[]>
+  ) {
+    super(detail);
+    this.name = 'AsteraApiError';
+    this.problem = {
+      type: `https://astera.local/errors/${status}`,
+      title,
+      status,
+      detail,
+      errors,
+    };
+  }
+}
+
 export function apiSuccess<T>(data: T, status: number = 200) {
   const payload =
     typeof data === 'object' && data !== null && !Array.isArray(data)

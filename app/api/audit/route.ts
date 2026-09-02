@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
     // Check if user is allowed to view audit logs (e.g. principal or manager)
-    const { role } = session.user as any;
+    const { role } = session.user as { id: string; name: string; role: string; organizationId: string };
     if (role !== 'principal' && role !== 'estate_manager') {
        throw new AsteraApiError(403, 'Forbidden', 'Not authorized to view audit logs');
     }

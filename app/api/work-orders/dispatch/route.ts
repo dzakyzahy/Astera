@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import type { IncidentStatus, IncidentSeverity, UserRole } from '@/types/domain';
 import { apiError, apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { db } from '@/lib/db';
 import { incidents, workOrders, outboxEvents, estates } from '@/lib/db/schema';
@@ -16,16 +17,15 @@ if (process.env.NODE_ENV !== 'production') globalForIdempotency.idempotencyServi
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as any;
-
+    if (!session || !session.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
+    const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
     const json = await request.json();
     const validated = dispatchWorkOrderInputSchema.parse(json);
 
     const result = await idempotencyService.executeWithLock(
       validated.idempotencyKey,
       'DISPATCH_WORK_ORDER',
-      async () => {
+      async (): Promise<{ statusCode: number; body: any }> => {
         return await db.transaction(async (tx) => {
           const woResult = await tx.select().from(workOrders).where(eq(workOrders.id, validated.workOrderId)).limit(1);
           if (woResult.length === 0) throw new Error(`Work Order ${validated.workOrderId} not found`);
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         aggregateId: result.body.workOrder.id,
         actorId,
         actorName,
-        actorRole,
+        actorRole: actorRole as UserRole,
         action: 'WORK_ORDER_DISPATCHED',
         payload: {
           workOrderId: result.body.workOrder.id,

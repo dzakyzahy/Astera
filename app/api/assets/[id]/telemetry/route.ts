@@ -14,7 +14,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     const params = await Promise.resolve(props.params);
     const assetId = params.id;
@@ -58,7 +58,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     const params = await Promise.resolve(props.params);
     const assetId = params.id;

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       throw new AsteraApiError(401, 'Unauthorized', 'You must be logged in.');
     }
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
     if (!organizationId) {
       throw new AsteraApiError(403, 'Forbidden', 'No organization assigned.');
     }

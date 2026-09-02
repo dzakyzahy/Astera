@@ -12,6 +12,18 @@ export const organizations = pgTable('organizations', {
   createdAt: timestamp('created_at').notNull(),
 });
 
+export const users = pgTable('users', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  username: varchar('username', { length: 100 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  role: varchar('role', { length: 100 }).notNull(),
+  organizationId: varchar('organization_id', { length: 255 }).notNull().references(() => organizations.id),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  active: boolean('active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const estates = pgTable('estates', {
   id: varchar('id', { length: 255 }).primaryKey(),
   organizationId: varchar('organization_id', { length: 255 }).notNull().references(() => organizations.id),

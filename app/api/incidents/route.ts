@@ -3,7 +3,7 @@ import { apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response
 import { db } from '@/lib/db';
 import { incidents, estates, assets } from '@/lib/db/schema';
 import { createIncidentInputSchema } from '@/lib/validations/incident.schema';
-import type { IncidentStatus, Evidence, IncidentSeverity } from '@/types/domain';
+import type { IncidentStatus, IncidentSeverity, UserRole } from '@/types/domain';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { eq, and, inArray, desc } from 'drizzle-orm';
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { organizationId } = session.user as any;
+    const { organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     const { searchParams } = new URL(request.url);
     const estateId = searchParams.get('estateId') || undefined;
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as any;
+    const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     const json = await request.json();
     const validated = createIncidentInputSchema.parse(json);
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       aggregateId: incId,
       actorId: actorId,
       actorName: actorName,
-      actorRole: actorRole,
+      actorRole: actorRole as UserRole,
       action: 'INCIDENT_CREATED',
       payload: {
         incidentId: incId,

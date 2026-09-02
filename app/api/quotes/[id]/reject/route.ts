@@ -20,7 +20,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new AsteraApiError(401, 'Unauthorized', 'Login required.');
-    const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as any;
+    const { id: actorId, name: actorName, role: actorRole, organizationId } = session.user as { id: string; name: string; role: string; organizationId: string };
 
     if (actorRole !== 'principal') {
       throw new AsteraApiError(403, 'Forbidden', 'Only principals can reject quotes.');
