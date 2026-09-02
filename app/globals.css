@@ -2407,15 +2407,39 @@ button.asset-row:hover {
   box-shadow: inset 2px 0 var(--accent);
 }
 .demo-notice {
-  border-color: var(--accent-wash);
-  background: color-mix(in srgb, var(--accent-wash) 40%, transparent);
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  background: var(--surface-raised);
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  letter-spacing: 0.01em;
 }
 .demo-notice-dot {
-  background: var(--accent);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent);
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--status-warning);
+  box-shadow: 0 0 0 2px var(--status-warning-bg);
 }
-.workspace-heading h1,
+.workspace-heading h1 {
+  font-size: clamp(26px, 2.6vw, 36px);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 4px 0 6px;
+}
+.workspace-heading p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
 .card-heading h2,
 .incident-card h2,
 .section-heading h2,
@@ -2424,8 +2448,8 @@ button.asset-row:hover {
 .confirm-approval h3,
 .all-clear-state h2 {
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
-.workspace-heading p,
 .incident-description,
 .approval-note,
 .product-footer {
@@ -2433,47 +2457,56 @@ button.asset-row:hover {
 }
 .workspace-heading .text-amber-300 {
   color: var(--status-warning);
+  font-weight: 600;
 }
 .workspace-heading .text-emerald-300 {
   color: var(--status-good);
+  font-weight: 600;
 }
 .primary-action {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-foreground);
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgb(146 64 14 / 20%);
   transition:
     background-color 160ms ease,
-    transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 160ms ease;
 }
 .primary-action:hover {
   background: var(--accent-hover);
+  box-shadow: 0 4px 12px rgb(146 64 14 / 28%);
 }
 .secondary-action {
   border-color: var(--border-strong);
-  background: transparent;
+  background: var(--surface-raised);
   color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
     transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 .secondary-action:hover {
+  border-color: var(--text-tertiary);
   background: var(--surface-secondary);
+  color: var(--text-primary);
 }
 .review-action,
 .dispatch-action {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-foreground);
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgb(146 64 14 / 20%);
   transition:
     background-color 160ms ease,
-    transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 160ms ease;
 }
 .review-action:hover,
 .dispatch-action:hover {
   background: var(--accent-hover);
+  box-shadow: 0 4px 12px rgb(146 64 14 / 28%);
 }
 :where(button, a):active {
   transform: scale(0.98);
@@ -2490,6 +2523,18 @@ button.asset-row:hover {
   border-color: var(--border-subtle);
   background: var(--surface-raised);
   box-shadow: var(--shadow-card);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.metric-card:hover,
+.operations-section:hover {
+  border-color: var(--border-strong);
+}
+.metric-card strong,
+.incident-facts strong,
+.asset-row strong,
+.data-stamp,
+.audit-count {
+  font-variant-numeric: tabular-nums;
 }
 .estate-card,
 .incident-card {
@@ -2498,12 +2543,16 @@ button.asset-row:hover {
 .eyebrow,
 .incident-id {
   color: var(--text-tertiary);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
 }
 .healthy-badge,
 .assigned-badge {
   border-color: color-mix(in srgb, var(--status-good) 20%, transparent);
   background: var(--status-good-bg);
   color: var(--status-good);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 .constellation {
   background-color: var(--surface-raised);
