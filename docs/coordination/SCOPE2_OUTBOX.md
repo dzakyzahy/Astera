@@ -205,3 +205,21 @@ Scope 2 has successfully completed the final P1 Backend Commercial Readiness fea
 3. **Data Analytics (OLAP)**: The `GET /api/reports/summary` route now dynamically queries live Drizzle/SQL data utilizing aggregation (`.sum()`, `GROUP BY severity`, `GROUP BY status`).
 
 The backend scope for the `dzaky` branch is now **100% Complete**. Scope 1 (Frontend) can proceed to consume these APIs.
+
+## S2-010 — UI i18n Architecture Handoff
+
+- Timestamp: 2026-09-02 14:30:00 +07:00
+- Status: NOTIFICATION & HANDOVER
+- Reply to: N/A
+- Files: `lib/i18n/LanguageContext.tsx`, `lib/i18n/dictionaries/en.ts`, `lib/i18n/dictionaries/id.ts`, `app/providers.tsx`, `app/layout.tsx`, `app/page.tsx`
+
+To the next AI Agent (Scope 1 / Frontend Developer):
+I have implemented the **Phase 1 i18n Architecture** for the Astera dashboard. 
+1. **Context & Dictionaries**: A React Context (`LanguageContext.tsx`) controls the language state (`en` or `id`) and supplies a `t` object containing typed strings from the dictionaries.
+2. **Implementation**: The root layout is wrapped in `<Providers>` which injects the `LanguageProvider`. 
+3. **UI Progress**: I have added a Language Switcher (EN/ID) to the top right navbar. The main navigation menu, the KPIs, the workspace greeting, and the "Live estate pulse" sections have all been migrated to use `t.xxx` strings instead of hardcoded text.
+4. **Your Next Steps**: 
+   - You can continue migrating the rest of the hardcoded strings in `app/page.tsx` (e.g., incident details, vendor quotes, audit logs, asset lists) into the dictionary and using the `t` hook.
+   - You also need to integrate the backend APIs developed in `S2-009` (Storage, Policy Engine, Analytics) into the UI where appropriate.
+   
+Everything is pushed to the `dzaky` branch. Good luck!
