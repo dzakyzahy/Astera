@@ -7,6 +7,7 @@ export const id: Dictionary = {
     assets: 'Aset',
     vendors: 'Vendor',
     audit: 'Audit',
+    privacy: 'Privasi',
   },
   kpi: {
     openIncidents: 'Insiden terbuka',
@@ -44,5 +45,54 @@ export const id: Dictionary = {
     tasksUpcoming: 'tugas mendatang',
     humanAuthorized: 'Operasi dengan otorisasi manusia',
     syntheticWorkspace: 'aset kritis · ruang kerja sintetis',
+  },
+  topbar: {
+    portfolioLabel: 'Portofolio',
+    privateWorkspace: 'Ruang kerja privat',
+    brandSubtitle: 'Operasi properti privat',
+  },
+  demoNotice: {
+    text: 'Pratinjau kompetisi · semua properti, orang, dan metrik menggunakan data sintetis',
+  },
+  overview: {
+    eyebrow: 'Ringkasan operasi',
+    resetting: 'Mengatur ulang…',
+  },
+  incident: {
+    sectionEyebrow: 'Insiden aktif',
+    highPriority: 'Prioritas tinggi',
+    approvalRecorded: 'Persetujuan dicatat',
+    dispatchSimulated: 'Pengiriman disimulasikan',
+    assetMatched: 'Aset cocok',
+    guestArrival: 'Kedatangan tamu',
+    recommendedQuote: 'Kutipan disarankan',
+    approvedSpend: 'Pengeluaran disetujui',
+    reviewQuotes: 'Tinjau kutipan vendor',
+    noVendorDispatched: 'Tidak ada vendor yang dikirim tanpa persetujuan yang akuntabel.',
+    aiLabel: 'Saran AI · memerlukan persetujuan manusia',
+    approvedLabel: 'Persetujuan dicatat · tindakan akuntabel',
+  },
+  assets: {
+    eyebrow: 'Registri aset',
+    heading: 'Aset kritis dan perawatan mendatang',
+    colAsset: 'Aset', colEstate: 'Properti',
+    colCondition: 'Kondisi', colNextAction: 'Tindakan selanjutnya',
+    showingLabel: 'Menampilkan:',
+  },
+  vendors: {
+    eyebrow: 'Jaringan yang disetujui',
+    heading: 'Mitra properti terpercaya',
+    compareQuotes: 'Bandingkan kutipan',
+    verified: 'Terverifikasi', response: 'Respons',
+    rating: 'Peringkat', history: 'Riwayat',
+  },
+  audit: {
+    eyebrow: 'Catatan akuntabel',
+    heading: 'Jejak keputusan',
+    events: 'kejadian',
+  },
+  footer: {
+    label: 'Prototipe kompetisi',
+    tagline: 'AI membantu. Orang yang akuntabel memutuskan.',
   }
 };

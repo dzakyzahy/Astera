@@ -826,7 +826,7 @@ export default function Home() {
             </div>
             <div className="min-w-0">
               <p className="brand-wordmark">ASTERA</p>
-              <p className="brand-subtitle">Private estate operations</p>
+              <p className="brand-subtitle">{t.topbar.brandSubtitle}</p>
             </div>
           </div>
 
@@ -839,8 +839,8 @@ export default function Home() {
             >
               <span className="estate-switcher-icon"><Building2 className="size-4" /></span>
               <span className="hidden text-left sm:block">
-                <span className="block text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Portfolio</span>
-                <span className="block text-sm font-medium">{selectedEstate}</span>
+                <span className="block text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{t.topbar.portfolioLabel}</span>
+                <span className="block text-sm font-medium">{selectedEstate === ALL_ESTATES ? t.common.allEstates : selectedEstate}</span>
               </span>
               <ChevronDown className="size-4 text-muted-foreground" />
             </button>
@@ -853,7 +853,7 @@ export default function Home() {
                     data-selected={selectedEstate === estate || undefined}
                     onClick={() => { setSelectedEstate(estate); setEstateMenuOpen(false); }}
                   >
-                    <span>{estate}</span>{selectedEstate === estate && <Check />}
+                    <span>{estate === ALL_ESTATES ? t.common.allEstates : estate}</span>{selectedEstate === estate && <Check />}
                   </button>
                 ))}
               </div>
@@ -861,7 +861,7 @@ export default function Home() {
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <div className="private-status hidden lg:flex"><ShieldCheck className="size-3.5" />Private workspace</div>
+            <div className="private-status hidden lg:flex"><ShieldCheck className="size-3.5" />{t.topbar.privateWorkspace}</div>
             <button className="topbar-icon" onClick={() => setLanguage(language === 'en' ? 'id' : 'en')} aria-label={t.common.language} title={t.common.language}>
               <span className="text-xs font-semibold">{language === 'en' ? 'EN' : 'ID'}</span>
             </button>
@@ -902,7 +902,7 @@ export default function Home() {
           <div className="workspace-heading">
             <div>
               <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <CircleGauge className="size-3.5 text-primary" />Operations overview<span aria-hidden="true">·</span>31 Aug 2026, 13:07 WIB
+                <CircleGauge className="size-3.5 text-primary" />{t.overview.eyebrow}<span aria-hidden="true">·</span>3 Sep 2026, 13:07 WIB
               </div>
               <h1>{t.workspace.greeting}</h1>
               <p>
@@ -916,13 +916,21 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="secondary-action hidden sm:inline-flex" onClick={resetDemo} disabled={mutationState !== 'idle'}><RotateCcw className={mutationState === 'resetting' ? 'spin' : undefined} />{mutationState === 'resetting' ? 'Resetting…' : t.common.resetDemo}</button>
+              <button className="secondary-action hidden sm:inline-flex" onClick={resetDemo} disabled={mutationState !== 'idle'}><RotateCcw className={mutationState === 'resetting' ? 'spin' : undefined} />{mutationState === 'resetting' ? t.overview.resetting : t.common.resetDemo}</button>
               <button className="primary-action" onClick={() => setOverlay('report')}><Plus />{t.common.reportIncident}</button>
             </div>
           </div>
 
           <div className="command-grid">
             <section className="estate-card" aria-labelledby="estate-pulse-title">
+              {selectedEstate === 'Jakarta Residence' && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/jakarta_residence_hero.jpg" alt="Jakarta Residence" className="w-full h-48 object-cover rounded-t-lg mb-4" />
+              )}
+              {selectedEstate === 'Bali Villa' && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/bali_villa_hero.jpg" alt="Bali Villa" className="w-full h-48 object-cover rounded-t-lg mb-4" />
+              )}
               <div className="card-heading">
                 <div>
                   <div className="eyebrow"><MapPin className="size-3.5" />{t.pulse.title}</div>
