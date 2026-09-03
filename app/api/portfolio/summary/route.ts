@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { estates, incidents, assets, workOrders, quotes } from '@/lib/db/schema';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { eq, inArray, and, desc, ne, or } from 'drizzle-orm';
+import { eq, inArray, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {

@@ -5,6 +5,7 @@ export const en = {
     assets: 'Assets',
     vendors: 'Vendors',
     audit: 'Audit',
+    privacy: 'Privacy',
   },
   kpi: {
     openIncidents: 'Open incidents',
@@ -42,6 +43,55 @@ export const en = {
     tasksUpcoming: 'tasks upcoming',
     humanAuthorized: 'Human-authorized operations',
     syntheticWorkspace: 'critical assets · synthetic workspace',
+  },
+  topbar: {
+    portfolioLabel: 'Portfolio',
+    privateWorkspace: 'Private workspace',
+    brandSubtitle: 'Private estate operations',
+  },
+  demoNotice: {
+    text: 'Competition preview · all properties, people and metrics use synthetic data',
+  },
+  overview: {
+    eyebrow: 'Operations overview',
+    resetting: 'Resetting…',
+  },
+  incident: {
+    sectionEyebrow: 'Active incident',
+    highPriority: 'High priority',
+    approvalRecorded: 'Approval recorded',
+    dispatchSimulated: 'Dispatch simulated',
+    assetMatched: 'Asset matched',
+    guestArrival: 'Guest arrival',
+    recommendedQuote: 'Recommended quote',
+    approvedSpend: 'Approved spend',
+    reviewQuotes: 'Review vendor quotes',
+    noVendorDispatched: 'No vendor is dispatched without accountable approval.',
+    aiLabel: 'AI suggestion · human approval required',
+    approvedLabel: 'Approval recorded · accountable action',
+  },
+  assets: {
+    eyebrow: 'Asset registry',
+    heading: 'Critical assets and upcoming care',
+    colAsset: 'Asset', colEstate: 'Estate',
+    colCondition: 'Condition', colNextAction: 'Next action',
+    showingLabel: 'Showing:',
+  },
+  vendors: {
+    eyebrow: 'Approved network',
+    heading: 'Trusted estate partners',
+    compareQuotes: 'Compare quotes',
+    verified: 'Verified', response: 'Response',
+    rating: 'Rating', history: 'History',
+  },
+  audit: {
+    eyebrow: 'Accountable record',
+    heading: 'Decision trail',
+    events: 'events',
+  },
+  footer: {
+    label: 'Competition prototype',
+    tagline: 'AI assists. Accountable people decide.',
   }
 };
 

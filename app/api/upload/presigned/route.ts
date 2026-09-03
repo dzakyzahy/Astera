@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       throw new AsteraApiError(403, 'Forbidden', 'No organization assigned.');
     }
 
-    const json = await request.json();
+    const json = (await request.json()) as { filename?: string; incidentId?: string };
     const { filename, incidentId } = json;
 
     if (!filename) {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Construct a secure path isolating by org and incident
     const path = `${organizationId}/${incidentId || 'general'}/${Date.now()}-${filename}`;
     
-    const { signedUrl, path: storagePath } = await generateUploadUrl(bucketName, path, 300); // 5 mins expiry
+    const { signedUrl, path: storagePath } = await generateUploadUrl(bucketName, path); // 5 mins expiry
 
     return apiSuccess({
       uploadUrl: signedUrl,

@@ -12,13 +12,13 @@ import {
 import { hashPassword } from '../utils/password';
 import { AsteraDbStore } from './db-store';
 import { AuditService } from '../services/audit-service';
+import type { TelemetryReading, AssetServiceLog, AuditEvent } from '@/types/domain';
 
 export async function runDatabaseSeed() {
   // Mock AuditService so AsteraDbStore doesn't try to concurrently insert audit events during instantiation
-  // @ts-expect-error: Intentionally unbound method for mocking
   // eslint-disable-next-line
   const originalRecordEvent = AuditService.prototype.recordEvent;
-  AuditService.prototype.recordEvent = async () => ({} as unknown);
+  AuditService.prototype.recordEvent = async () => ({} as AuditEvent);
 
   try {
     const store = new AsteraDbStore();

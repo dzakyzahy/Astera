@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import type { IncidentStatus, IncidentSeverity, UserRole } from '@/types/domain';
+import { type NextRequest } from 'next/server';
+import type { UserRole } from '@/types/domain';
 import { apiError, apiSuccess, handleRouteError, AsteraApiError } from '@/lib/api-response';
 import { db } from '@/lib/db';
 import { incidents, workOrders, outboxEvents, estates } from '@/lib/db/schema';
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     const result = await idempotencyService.executeWithLock(
       validated.idempotencyKey,
       'DISPATCH_WORK_ORDER',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async (): Promise<{ statusCode: number; body: any }> => {
         return await db.transaction(async (tx) => {
           const woResult = await tx.select().from(workOrders).where(eq(workOrders.id, validated.workOrderId)).limit(1);
@@ -92,15 +93,15 @@ export async function POST(request: NextRequest) {
       const auditService = new AuditService();
       await auditService.recordEvent({
         aggregateType: 'WORK_ORDER',
-        aggregateId: result.body.workOrder.id,
+        aggregateId: (result.body as any).workOrder.id,
         actorId,
         actorName,
         actorRole: actorRole as UserRole,
         action: 'WORK_ORDER_DISPATCHED',
         payload: {
-          workOrderId: result.body.workOrder.id,
-          vendorId: result.body.workOrder.vendorId,
-          assignedTechnician: result.body.workOrder.assignedTechnician,
+          workOrderId: (result.body as any).workOrder.id,
+          vendorId: (result.body as any).workOrder.vendorId,
+          assignedTechnician: (result.body as any).workOrder.assignedTechnician,
           idempotencyKey: validated.idempotencyKey,
         },
       });

@@ -5,7 +5,7 @@ import { assets, estates } from '@/lib/db/schema';
 import { addTelemetryBatchInputSchema } from '@/lib/validations/asset.schema';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
   _request: NextRequest,
@@ -96,7 +96,7 @@ export async function POST(
     const newTelemetry = [...(asset.telemetry || []), ...formatted];
 
     const updated = await db.update(assets)
-      .set({ telemetry: newTelemetry as any }) // Depending on drizzle-orm setup, casting might be needed for JSON arrays
+      .set({ telemetry: newTelemetry as Record<string, unknown>[] }) // Depending on drizzle-orm setup, casting might be needed for JSON arrays
       .where(eq(assets.id, assetId))
       .returning();
 

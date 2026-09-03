@@ -20,13 +20,11 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
  * @param expiresIn Time in seconds until the URL expires (default 60s)
  * @returns An object containing the presigned URL
  */
-export async function generateUploadUrl(bucketName: string, path: string, expiresIn = 60) {
+export async function generateUploadUrl(bucketName: string, path: string) {
   const { data, error } = await supabaseAdmin
     .storage
     .from(bucketName)
-    .createSignedUploadUrl(path, {
-      expiresIn
-    });
+    .createSignedUploadUrl(path);
 
   if (error) {
     throw new Error(`Supabase storage error: ${error.message}`);
